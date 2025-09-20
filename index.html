@@ -103,13 +103,13 @@
    <script>
         // 1) Publica tu hoja de MENÚ como CSV y pega la URL aquí.
         //    Soporta columnas: categoria, subcategoria, nombre, precio, costo, stock, min (o minimo / alerta)
-        const MENU_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTOBjJjm_oZvSOYiLN_laVNhv9iJ6wr7w2MgPNPBf7gnP153X6LART0NtA2OcPdtg/pub?gid=1904567791&single=true&output=csv";
+          const STORE_KEY = "elforastero"; // para identificar el local en los borradores
+  const MENU_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTOBjJjm_oZvSOYiLN_laVNhv9iJ6wr7w2MgPNPBf7gnP153X6LART0NtA2OcPdtg/pub?gid=1904567791&single=true&output=csv";
+
 
         // 2) Apps Script WebApp para guardar pedidos:
         const ORDERS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzDOjveLDLPJI344Z9nm4DGfjytidwisPt3hU01lFzDK6siuI9GhFzhPxrdw-t2JD8u/exec";
 
-        // 3) Opcional: nombre del local para imprimir comanda
-        const STORE_NAME = "OnceyDoce";
       </script>
 
   <!-- Contenido principal -->
@@ -586,20 +586,25 @@
     }
 
     // ===== Carga de menú =====
-    function normalizeRow(row, idx){
-      const min = row.min ?? row.minimo ?? row.alerta ?? row.Min ?? row.Mínimo ?? row.Alerta;
-      const stock = row.stock ?? row.Stock ?? row.inventario ?? row.existencias;
-      return {
-        _rowId:`r${idx}`,
-        categoria:(row.categoria||row.Categoria||row.categoría||row.Categoría||'').toString().trim(),
-        subcategoria:(row.subcategoria||row.Subcategoria||row.Subcategoría||row['Sub-categoria']||'').toString().trim(),
-        nombre:(row.nombre||row.producto||row.Producto||row.Nombre||'').toString().trim(),
-        precio:Number(row.precio||row.Precio||row.price||0),
-        costo:Number(row.costo||row.Costo||row.cost||0),
-        stock: stock===''||stock==null ? '' : Number(stock),
-        min:   min===''||min==null   ? '' : Number(min)
-      };
-    }
+   function normalizeRow(row, idx){
+  // nombres tolerantes a mayúsculas y variantes
+  const nombre = row.nombre ?? row.Nombre ?? row.producto ?? row.Producto ?? row.NombreItem;
+  const precio = row.precio ?? row.Precio ?? row.price;
+  const costo  = row.costo  ?? row.Costo  ?? row.cost;   // puede venir vacío
+  const stock  = row.stock  ?? row.Stock  ?? row.inventario ?? row.existencias; // opcional
+  const min    = row.min    ?? row.minimo ?? row.Mínimo ?? row.alerta ?? row.Alerta; // opcional
+
+  return {
+    _rowId: `r${idx}`,
+    categoria: (row.categoria ?? row.Categoria ?? "").toString().trim(),
+    subcategoria: (row.subcategoria ?? row.Subcategoria ?? "").toString().trim(),
+    nombre: (nombre ?? "").toString().trim(),
+    precio: Number(precio ?? 0),
+    costo:  Number(costo ?? 0) || 0,
+    stock: (stock===''||stock==null) ? '' : Number(stock),
+    min:   (min===''  ||min==null)   ? '' : Number(min)
+  };
+}
 
     async function loadMenu(){
       if(!MENU_CSV_URL || MENU_CSV_URL.startsWith('PASTE_')){
