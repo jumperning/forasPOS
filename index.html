@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>POS — >El Forastero</title>
+  <title>POS — El Forastero</title>
 
   <!-- Tailwind (dark mode por clase) -->
   <script> window.tailwind = { config: { darkMode: 'class' } } </script>
@@ -35,58 +35,46 @@
     .badge{ display:inline-flex; align-items:center; gap:.375rem; padding:.25rem .5rem; border-radius:999px; font-size:.75rem; color:#475569; background:#f3f4f6; }
   </style>
   <style>
-  /* Tipografías en negro en todo el sitio */
-  body { color:#000; }
-  .text-slate-800,.text-slate-700,.text-slate-600,.text-slate-500,.text-slate-400,
-  .text-gray-800,.text-gray-700,.text-gray-600,.text-gray-500,.text-gray-400 {
-    color:#000 !important;
-  }
-  /* Badges y textos “muted” también en negro */
-  .badge { color:#000; }
-</style>
+    /* Tipografías en negro en todo el sitio */
+    body { color:#000; }
+    .text-slate-800,.text-slate-700,.text-slate-600,.text-slate-500,.text-slate-400,
+    .text-gray-800,.text-gray-700,.text-gray-600,.text-gray-500,.text-gray-400 { color:#000 !important; }
+    .badge { color:#000; }
+  </style>
 </head>
-<body class="bg-slate-50  text-black dark:text-black">
-
+<body class="bg-slate-50 text-black">
 
   <!-- Sidebar -->
   <aside class="hidden md:flex md:flex-col fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-200">
     <div class="px-5 pt-6 pb-4 flex items-center gap-3">
-      <div class="h-9 w-9 grid place-items-center rounded-xl bg-[var(--accent-600)] text-white font-black">OD</div>
+      <div class="h-9 w-9 grid place-items-center rounded-xl bg-[var(--accent-600)] text-white font-black">EF</div>
       <div>
         <div class="text-lg font-extrabold">El Forastero</div>
         <div class="text-xs text-slate-500">POS & Reportes</div>
       </div>
     </div>
     <nav class="mt-2 px-2 space-y-1">
-      <a href="./index.html" class="navlink ${location.pathname.endsWith('index.html') ? 'active' : ''}" title="POS">
-    <!-- Cash/Ticket -->
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <!-- base -->
-      <path d="M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2Z"/>
-      <!-- gaveta -->
-      <path d="M7 16h10"/>
-      <path d="M9.5 13h5"/>
-      <!-- ticketcito arriba -->
-      <path d="M9 4h6v4l-1-.6-1 .6-1-.6-1 .6-1-.6-1 .6V4Z"/>
-    </svg>
-    <span>POS</span>
-  </a>
+      <a href="./index.html" class="navlink active" title="POS">
+        <!-- Cash/Ticket -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2Z"/>
+          <path d="M7 16h10"/><path d="M9.5 13h5"/>
+          <path d="M9 4h6v4l-1-.6-1 .6-1-.6-1 .6-1-.6-1 .6V4Z"/>
+        </svg>
+        <span>POS</span>
+      </a>
 
-  <!-- Reporte -->
-  <a href="./reporte.html" class="navlink ${location.pathname.endsWith('reporte.html') ? 'active' : ''}" title="Reporte">
-    <!-- Chart bars -->
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M3 20h18"/>
-      <rect x="5" y="11" width="3" height="6" rx="1"/>
-      <rect x="10.5" y="8" width="3" height="9" rx="1"/>
-      <rect x="16" y="5" width="3" height="12" rx="1"/>
-    </svg>
-    <span>Reporte</span>
-  </a>
+      <a href="./reporte.html" class="navlink" title="Reporte">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 20h18"/><rect x="5" y="11" width="3" height="6" rx="1"/>
+          <rect x="10.5" y="8" width="3" height="9" rx="1"/><rect x="16" y="5" width="3" height="12" rx="1"/>
+        </svg>
+        <span>Reporte</span>
+      </a>
     </nav>
     <div class="mt-auto p-3">
       <button id="btnLogout" class="btn w-full">Salir</button>
-      <div class="text-[10px] text-slate-400 mt-2 text-center">© 2025 OnceyDoce</div>
+      <div class="text-[10px] text-slate-400 mt-2 text-center">© 2025 El Forastero</div>
     </div>
   </aside>
 
@@ -95,22 +83,22 @@
     <div class="px-4 py-3 flex items-center justify-between md:justify-end">
       <div class="md:hidden flex items-center gap-3">
         <div class="h-8 w-8 grid place-items-center rounded-lg bg-[var(--accent-600)] text-white font-black">EF</div>
-        <span class="font-bold">>El Forastero</span>
+        <span class="font-bold">El Forastero</span>
       </div>
       <div class="text-sm text-slate-500">POS</div>
     </div>
   </header>
-   <script>
-        // 1) Publica tu hoja de MENÚ como CSV y pega la URL aquí.
-        //    Soporta columnas: categoria, subcategoria, nombre, precio, costo, stock, min (o minimo / alerta)
-          const STORE_KEY = "elforastero"; // para identificar el local en los borradores
-  const MENU_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTOBjJjm_oZvSOYiLN_laVNhv9iJ6wr7w2MgPNPBf7gnP153X6LART0NtA2OcPdtg/pub?gid=1904567791&single=true&output=csv";
 
+  <!-- Config del local -->
+  <script>
+    const STORE_KEY = "elforastero";
+    // URL del CSV publicada (separado por coma)
+    const MENU_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTOBjJjm_oZvSOYiLN_laVNhv9iJ6wr7w2MgPNPBf7gnP153X6LART0NtA2OcPdtg/pub?gid=1904567791&single=true&output=csv";
 
-        // 2) Apps Script WebApp para guardar pedidos:
-        const ORDERS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzDOjveLDLPJI344Z9nm4DGfjytidwisPt3hU01lFzDK6siuI9GhFzhPxrdw-t2JD8u/exec";
-
-      </script>
+    // WebApp exclusivo de EL FORASTERO (reemplazá por tu URL)
+    const ORDERS_WEBAPP_URL = "PASTE_YOUR_ELFORASTERO_WEBAPP_URL";
+    const STORE_NAME = "El Forastero";
+  </script>
 
   <!-- Contenido principal -->
   <main class="md:ml-64 p-4 sm:p-6">
@@ -119,7 +107,7 @@
       <!-- Header POS -->
       <div class="card p-6 flex items-center justify-between">
         <div>
-          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">POS >El Forastero</h1>
+          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">POS — El Forastero</h1>
           <p class="text-sm text-gray-500">Multi-carritos · Google Sheets</p>
         </div>
         <div class="text-right">
@@ -156,7 +144,6 @@
 
         <!-- MAIN POS -->
         <section class="lg:col-span-9 col-span-12 space-y-6">
-         
 
           <!-- Filtros -->
           <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -262,7 +249,7 @@
     // --- Storage ---
     function loadState(){
       try{
-        const raw = localStorage.getItem('pos-1112-mesas');
+        const raw = localStorage.getItem('pos-' + STORE_KEY + '-mesas');
         if(raw){ const data = JSON.parse(raw); MESAS = data.mesas||[]; MESA_ACTUAL = data.actual||null; }
       }catch{}
       if(MESAS.length===0){
@@ -271,7 +258,7 @@
         MESA_ACTUAL=id;
       }
     }
-    function saveState(){ localStorage.setItem('pos-1112-mesas', JSON.stringify({mesas:MESAS, actual:MESA_ACTUAL})); }
+    function saveState(){ localStorage.setItem('pos-' + STORE_KEY + '-mesas', JSON.stringify({mesas:MESAS, actual:MESA_ACTUAL})); }
     function mesaActual(){ return MESAS.find(m=>m.id===MESA_ACTUAL); }
 
     // ====== STOCK ======
@@ -279,7 +266,7 @@
       return MESAS.reduce((acc,m)=> acc + (m.items||[]).filter(x=>x._rowId===rowId).reduce((a,i)=>a+i.qty,0), 0);
     }
     function productThreshold(p){
-      const glob = Number($('#stockMinGlobal').val()||0);
+      const glob = Number(document.getElementById('stockMinGlobal').value||0);
       const own = Number(p.min||p.minimo||p.alerta||0);
       return Number.isFinite(own) && own>0 ? own : glob;
     }
@@ -301,7 +288,7 @@
       const key = p._rowId;
       if(ALERTED.has(key)) return;
       ALERTED.add(key);
-      alert(`⚠️ Stock bajo de "${p.nombre}". Quedan ${availableStock(p)} (umbral ${productThreshold(p)}).`);
+      alert('⚠️ Stock bajo de \"' + p.nombre + '\". Quedan ' + availableStock(p) + ' (umbral ' + productThreshold(p) + ').');
     }
 
     // --- Sidebar render ---
@@ -413,14 +400,14 @@
 
       if(Number.isFinite(Number(p.stock))){
         const disp = availableStock(p);
-        if(disp<=0){ alert(`Sin stock de "${p.nombre}"`); renderProducts(); return; }
+        if(disp<=0){ alert('Sin stock de \"' + p.nombre + '\"'); renderProducts(); return; }
       }
 
       const ex=m.items.find(x=>x._rowId===rowId);
       if(ex){
         if(Number.isFinite(Number(p.stock))){
           const disp = availableStock(p);
-          if(disp<=0){ alert(`Sin stock de "${p.nombre}"`); renderProducts(); return; }
+          if(disp<=0){ alert('Sin stock de \"' + p.nombre + '\"'); renderProducts(); return; }
         }
         ex.qty+=1;
       }else{
@@ -446,7 +433,7 @@
         const reservedOtros = reservedQtyAllMesas(rowId) - it.qty;
         const disp = Math.max(0, Number(p.stock||0) - reservedOtros);
         if(qty > disp){
-          alert(`Solo hay ${disp} disponibles de "${p.nombre}".`);
+          alert('Solo hay ' + disp + ' disponibles de \"' + p.nombre + '\".');
           qty = disp>0 ? disp : 1;
         }
       }
@@ -495,7 +482,7 @@
         if(Number.isFinite(Number(p?.stock))){
           const disp = availableStock(p);
           if(it.qty > disp){
-            alert(`No hay stock suficiente de "${p.nombre}". Disponible: ${disp}.`);
+            alert('No hay stock suficiente de \"' + p.nombre + '\". Disponible: ' + disp + '.');
             return;
           }
         }
@@ -504,6 +491,7 @@
       const total = m.items.reduce((a,x)=>a+x.precio*x.qty,0);
       const totalCosto = m.items.reduce((a,x)=>a+(Number(x.costo)||0)*x.qty,0);
       const payload = {
+        store: STORE_KEY,
         timestamp:new Date().toISOString(),
         cliente:m.cliente||'',
         mesa:m.nombre,
@@ -543,7 +531,7 @@
 
     function printTicket(){
       const m=mesaActual(); if(!m) return;
-      const meta = `${new Date().toLocaleString('es-AR')} · ${m.nombre} · Cliente: ${m.cliente||'-'}`;
+      const meta = new Date().toLocaleString('es-AR') + ' · ' + m.nombre + ' · Cliente: ' + (m.cliente||'-');
       $('#ticketMeta').text(meta); $('#ticket').html($('#ticket').html().replace('{{STORE}}', STORE_NAME));
       const itemsHtml = m.items.map(x=>`<div class="flex justify-between"><span>${x.qty}× ${x.nombre}</span><span>${$fmt(x.qty*x.precio)}</span></div>`).join('');
       $('#ticketItems').html(itemsHtml);
@@ -580,26 +568,52 @@
       $('#btnComanda').on('click', printTicket);
     }
 
-    // ===== Carga de menú =====
-   function normalizeRow(row, idx){
-  // nombres tolerantes a mayúsculas y variantes
-  const nombre = row.nombre ?? row.Nombre ?? row.producto ?? row.Producto ?? row.NombreItem;
-  const precio = row.precio ?? row.Precio ?? row.price;
-  const costo  = row.costo  ?? row.Costo  ?? row.cost;   // puede venir vacío
-  const stock  = row.stock  ?? row.Stock  ?? row.inventario ?? row.existencias; // opcional
-  const min    = row.min    ?? row.minimo ?? row.Mínimo ?? row.alerta ?? row.Alerta; // opcional
+    // ===== Helpers =====
+    function parseNum(v){
+      if(v===null || v===undefined) return NaN;
+      if(typeof v==='number') return v;
+      let s = String(v).trim();
+      if(!s) return NaN;
+      // quitar moneda y espacios
+      s = s.replace(/[^0-9,.\-]/g, '');
+      // si tiene coma y no punto => usar coma como decimal
+      if(s.includes(',') && !s.includes('.')){
+        s = s.replace(/\./g,'').replace(',', '.');
+      }else{
+        // miles con coma
+        s = s.replace(/,/g,'');
+      }
+      return Number(s);
+    }
 
-  return {
-    _rowId: `r${idx}`,
-    categoria: (row.categoria ?? row.Categoria ?? "").toString().trim(),
-    subcategoria: (row.subcategoria ?? row.Subcategoria ?? "").toString().trim(),
-    nombre: (nombre ?? "").toString().trim(),
-    precio: Number(precio ?? 0),
-    costo:  Number(costo ?? 0) || 0,
-    stock: (stock===''||stock==null) ? '' : Number(stock),
-    min:   (min===''  ||min==null)   ? '' : Number(min)
-  };
-}
+    // ===== Carga de menú =====
+    function normalizeRow(row, idx){
+      const nombre = row.nombre ?? row.Nombre ?? row.NOMBRE ?? row.producto ?? row.Producto ?? row.NombreItem;
+      const precio = row.precio ?? row.Precio ?? row.PRECIO ?? row.price ?? row['Precio venta'];
+      const costo  = row.costo  ?? row.Costo  ?? row.COSTO  ?? row.cost;
+      const stock  = row.stock  ?? row.Stock  ?? row.STOCK  ?? row.inventario ?? row.existencias;
+      const min    = row.min    ?? row.Min    ?? row.MIN    ?? row.minimo ?? row.Mínimo ?? row.alerta ?? row.Alerta;
+
+      const cat    = row.categoria ?? row.Categoria ?? row.CATEGORIA;
+      const sub    = row.subcategoria ?? row.Subcategoria ?? row.SUBCATEGORIA;
+
+      const nPrecio = parseNum(precio);
+      const nCosto  = parseNum(costo);
+      const nStock  = parseNum(stock);
+      const nMin    = parseNum(min);
+
+      const nombreStr = (nombre ?? '').toString().trim();
+      return {
+        _rowId:`r${idx}`,
+        categoria:(cat ?? '').toString().trim(),
+        subcategoria:(sub ?? '').toString().trim(),
+        nombre:nombreStr,
+        precio: Number.isNaN(nPrecio) ? 0 : nPrecio,
+        costo:  Number.isNaN(nCosto)  ? 0 : nCosto,
+        stock:  Number.isNaN(nStock)  ? '' : nStock,
+        min:    Number.isNaN(nMin)    ? '' : nMin
+      };
+    }
 
     async function loadMenu(){
       if(!MENU_CSV_URL || MENU_CSV_URL.startsWith('PASTE_')){
@@ -613,7 +627,7 @@
             MENU = results.data
               .filter(r=>r && Object.keys(r).length)
               .map(normalizeRow)
-              .filter(x=>x.nombre && !isNaN(x.precio));
+              .filter(x=> x.nombre && x.nombre.toUpperCase()!=='NOMBRE' );
             ALERTED.clear();
             renderFilters(); renderProducts(); renderCart();
             $('#statusBadge').attr('class','badge').text('Menú sincronizado');
