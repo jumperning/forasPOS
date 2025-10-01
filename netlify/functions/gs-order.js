@@ -1,52 +1,49 @@
-// /.netlify/functions/gs-order
-export async function handler(event) {
-  // Permitir CORS del frontend (mismo dominio en Netlify)
+// netlify/functions/gs-order.js
+exports.handler = async (event) => {
+  const target = process.env.GS_WEBAPP_URL; // URL /exec del último deployment de tu GAS
+  const cors = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+  };
+
+  // Preflight
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      },
-      body: ''
-    };
+    return { statusCode: 200, headers: cors, body: '' };
   }
 
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+  if (!target) {
+    return { statusCode: 500, headers: cors, body: JSON.stringify({ ok:false, error:'GS_WEBAPP_URL no configurada' }) };
   }
 
   try {
-    const target = process.env.GS_WEBAPP_URL; // poné acá tu URL /exec de Apps Script
+    let url = target;
+    let fetchOpts = {};
 
-    // el front nos manda form-urlencoded (action=saveOrder&data=...)
-    const res = await fetch(target, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-      body: event.body
-    });
+    if (event.httpMethod === 'GET') {
+      const qs = event.rawQuery || '';
+      url = qs ? `${target}?${qs}` : target;
+      fetchOpts = { method: 'GET' };
+    } else if (event.httpMethod === 'POST') {
+      // reenviamos form-urlencoded tal cual
+      fetchOpts = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+        body: event.body
+      };
+    } else {
+      return { statusCode: 405, headers: cors, body: 'Method Not Allowed' };
+    }
 
-    // Apps Script a veces devuelve texto plano; lo reenviamos tal cual,
-    // intentando parsear JSON si corresponde
+    const res = await fetch(url, fetchOpts);
     const text = await res.text();
-    let body = text;
-    try { body = JSON.stringify(JSON.parse(text)); } catch (_) {}
+    // devolvemos como JSON si es parseable
+    let body = text, ct = 'application/json';
+    try { body = JSON.stringify(JSON.parse(text)); } catch { ct = 'text/plain'; }
 
-    return {
-      statusCode: res.status,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-      body
-    };
+    return { statusCode: res.status, headers: { ...cors, 'Content-Type': ct }, body };
 
   } catch (err) {
-    return {
-      statusCode: 500,
-      headers: { 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ ok:false, error: String(err) })
-    };
+    return { statusCode: 500, headers: cors, body: JSON.stringify({ ok:false, error: String(err) }) };
   }
-}
+};
