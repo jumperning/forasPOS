@@ -315,76 +315,6 @@
   function shouldNoStock(p){
     return availableStock(p) <= 0 && (Number(p.stock||0) > 0);
   }
-
-<script>
-// --- Parsers robustos para números de Sheets (soporta $, puntos, comas, espacios, etc.)
-function parseMoney(v){
-  if(v==null) return 0;
-  if(typeof v === 'number' && isFinite(v)) return v;
-  let s = String(v).trim();
-  if(!s) return 0;
-  // fuera símbolos y letras
-  s = s.replace(/[^0-9,\.\-]/g, '');
-  // si tiene ambos separadores, asumimos: punto = miles, coma = decimales
-  if(s.includes('.') && s.includes(',')){
-    s = s.replace(/\./g, '').replace(',', '.');
-  }else{
-    // si solo hay comas, pueden ser miles o decimales; las tratamos como miles
-    // (en tu planilla usás $ 4,000 => miles)
-    s = s.replace(/,/g, '');
-  }
-  const n = Number(s);
-  return isFinite(n) ? n : 0;
-}
-
-function parseIntegerLike(v){
-  if(v==null) return '';
-  if(typeof v === 'number' && isFinite(v)) return Math.round(v);
-  const s = String(v).trim().toLowerCase();
-  // valores que indican "sin control de stock"
-  if(s==='' || s==='no' || s==='n/a' || s==='na' || s==='false') return '';
-  // quitar todo menos dígitos y signo
-  const clean = s.replace(/[^0-9\-]/g,'');
-  if(clean==='') return '';
-  const n = Number(clean);
-  return isFinite(n) ? Math.round(n) : '';
-}
-
-// Normaliza una fila del CSV a tu modelo interno
-function normalizeRow(row, idx){
-  // alias posibles por si cambian encabezados
-  const get = (...keys)=> {
-    for(const k of keys){
-      if(Object.prototype.hasOwnProperty.call(row, k) && row[k]!=null) return row[k];
-    }
-    return '';
-  };
-
-  const minRaw   = get('min','minimo','mínimo','alerta','Min','Mínimo','Alerta');
-  const stockRaw = get('stock','Stock','inventario','existencias');
-
-  return {
-    _rowId: `r${idx}`,
-    categoria:   String(get('categoria','Categoria','categoría','Categoría')).trim(),
-    subcategoria:String(get('subcategoria','Subcategoria','subcategoría','Subcategoría','Sub-categoria')).trim(),
-    nombre:      String(get('nombre','producto','Producto','Nombre')).trim(),
-    // por si luego querés usarlos en búsqueda
-    tipo:        String(get('TIPO','Tipo','tipo')).trim(),
-    subtipo:     String(get('SUBTIPO','Subtipo','subtipo')).trim(),
-    img:         String(get('img','imagen','Imagen','url','URL')).trim(),
-    precio:      parseMoney(get('precio','Precio','price','Price')),
-    costo:       parseMoney(get('costo','Costo','cost','Cost')),
-    stock:       parseIntegerLike(stockRaw),     // '' => sin control de stock
-    min:         parseIntegerLike(minRaw)        // '' => usa umbral global
-  };
-}
-</script>
-
-
-
-
-
-  
   function maybeAlertLow(p){
     if(!shouldLowStock(p)) return;
     const key = p._rowId;
@@ -393,52 +323,31 @@ function normalizeRow(row, idx){
     alert(`⚠️ Stock bajo de "${p.nombre}". Quedan ${availableStock(p)} (umbral ${productThreshold(p)}).`);
   }
 
-  // --- Sidebar render ---
-  function renderMesas(){
-    const cont = $('#listaMesas');
-    cont.empty();
-    MESAS.forEach(m=>{
-      const active = m.id===MESA_ACTUAL;
-      cont.append(`
-        <div class="group flex items-center justify-between gap-2 p-2 rounded-xl border ${active?'border-[var(--accent-600)] bg-[var(--accent-50)]':'border-gray-200 hover:bg-gray-50'}">
-          <button class="flex items-center gap-2 flex-1 text-left" data-action="switch" data-id="${m.id}">
-            <span class="inline-block w-3 h-3 rounded-full" style="background:${m.color}"></span>
-            <span class="font-medium truncate">${m.nombre}</span>
-            <span class="text-xs text-gray-500 ml-auto">${m.items.reduce((a,x)=>a+x.qty,0)} ítems</span>
-          </button>
-          <div class="opacity-0 group-hover:opacity-100 transition flex gap-1">
-            <button class="btn btn-ghost text-xs px-2 py-1" title="Renombrar" data-action="rename" data-id="${m.id}">✎</button>
-            <button class="btn btn-ghost text-xs px-2 py-1" title="Duplicar" data-action="dup" data-id="${m.id}">⧉</button>
-            <button class="btn btn-ghost text-xs px-2 py-1" title="Eliminar" data-action="del" data-id="${m.id}">✕</button>
-          </div>
-        </div>`);
-    });
-    const m = mesaActual();
-    $('#mesaTitulo').text(m.nombre);
-    $('#cliente').val(m.cliente);
-    $('#pago').val(m.pago);
-    $('#colorMesa').val(m.color);
-    $('#cartWrapper').css('border-color', m.color);
-    renderCart();
-    saveState();
+  // --- Parsers robustos para números de Sheets (soporta $, puntos, comas, espacios, etc.)
+  function parseMoney(v){
+    if(v==null) return 0;
+    if(typeof v === 'number' && isFinite(v)) return v;
+    let s = String(v).trim();
+    if(!s) return 0;
+    s = s.replace(/[^0-9,.\-]/g, '');
+    if(s.includes('.') && s.includes(',')){
+      s = s.replace(/\./g, '').replace(',', '.');
+    }else{
+      s = s.replace(/,/g, '');
+    }
+    const n = Number(s);
+    return isFinite(n) ? n : 0;
   }
-
-  function nuevaMesa(nombre='Mesa '+(MESAS.length+1), color='var(--accent-600)'){
-    const m = { id:uid(), nombre, color:'#fb8c00', items:[], cliente:'', pago:0 };
-    MESAS.push(m); MESA_ACTUAL=m.id; renderMesas();
+  function parseIntegerLike(v){
+    if(v==null) return '';
+    if(typeof v === 'number' && isFinite(v)) return Math.round(v);
+    const s = String(v).trim().toLowerCase();
+    if(s==='' || s==='no' || s==='n/a' || s==='na' || s==='false') return '';
+    const clean = s.replace(/[^0-9\-]/g,'');
+    if(clean==='') return '';
+    const n = Number(clean);
+    return isFinite(n) ? Math.round(n) : '';
   }
-  function duplicarMesa(id){
-    const src = MESAS.find(m=>m.id===id); if(!src) return;
-    const copy = { ...src, id:uid(), nombre: src.nombre+" (copia)", items: JSON.parse(JSON.stringify(src.items)) };
-    MESAS.push(copy); MESA_ACTUAL=copy.id; renderMesas();
-  }
-  function eliminarMesa(id){
-    if(MESAS.length===1){ alert('Debe quedar al menos una mesa.'); return; }
-    MESAS = MESAS.filter(m=>m.id!==id);
-    if(MESA_ACTUAL===id){ MESA_ACTUAL = MESAS[0].id; }
-    renderMesas();
-  }
-  function cambiarColorActual(color){ const m=mesaActual(); if(!m) return; m.color=color; $('#cartWrapper').css('border-color', color); saveState(); renderMesas(); }
 
   // ===== Productos y filtros =====
   function groupUnique(arr, key){ return [...new Set(arr.map(x => (x[key]||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b)); }
@@ -460,7 +369,7 @@ function normalizeRow(row, idx){
   function productMatches(p){
     const q=$('#buscar').val().trim().toLowerCase(); const cat=$('#categoria').val(); const sub=$('#subcategoria').val();
     if(cat && p.categoria!==cat) return false; if(sub && p.subcategoria!==sub) return false; if(!q) return true;
-    return [p.nombre,p.categoria,p.subcategoria].join(' ').toLowerCase().includes(q);
+    return [p.nombre,p.categoria,p.subcategoria,p.tipo,p.subtipo].join(' ').toLowerCase().includes(q);
   }
 
   function renderProducts(){
@@ -691,7 +600,6 @@ function normalizeRow(row, idx){
 
     window.print();
 
-    // Limpia marca de impresión
     setTimeout(()=>{ if(target) target.classList.remove('print-active'); }, 250);
   }
 
@@ -718,7 +626,7 @@ function normalizeRow(row, idx){
     $('#stockMinGlobal').on('input', ()=> renderProducts());
 
     $('#categoria').on('change', function(){ renderSubcats(); renderProducts(); });
-    $('#subcategoria, #buscar').on('input change', renderProducts);
+    $('#subcategoria, #buscar').on('input change', renderProducts());
 
     $('#listaProductos').on('click','button[data-action="add"]', function(){ addToCart($(this).data('id')); });
 
@@ -739,17 +647,21 @@ function normalizeRow(row, idx){
 
   // ===== Carga de menú =====
   function normalizeRow(row, idx){
-    const min = row.min ?? row.minimo ?? row.alerta ?? row.Min ?? row.Mínimo ?? row.Alerta;
-    const stock = row.stock ?? row.Stock ?? row.inventario ?? row.existencias;
+    const get = (...keys)=>{ for(const k of keys){ if(Object.prototype.hasOwnProperty.call(row,k) && row[k]!=null) return row[k]; } return ''; };
+    const minRaw   = get('min','minimo','mínimo','alerta','Min','Mínimo','Alerta');
+    const stockRaw = get('stock','Stock','inventario','existencias');
     return {
       _rowId:`r${idx}`,
-      categoria:(row.categoria||row.Categoria||row.categoría||row.Categoría||'').toString().trim(),
-      subcategoria:(row.subcategoria||row.Subcategoria||row.Subcategoría||row['Sub-categoria']||'').toString().trim(),
-      nombre:(row.nombre||row.producto||row.Producto||row.Nombre||'').toString().trim(),
-      precio:Number(row.precio||row.Precio||row.price||0),
-      costo:Number(row.costo||row.Costo||row.cost||0),
-      stock: stock===''||stock==null ? '' : Number(stock),
-      min:   min===''||min==null   ? '' : Number(min)
+      categoria:   String(get('categoria','Categoria','categoría','Categoría')).trim(),
+      subcategoria:String(get('subcategoria','Subcategoria','subcategoría','Subcategoría','Sub-categoria')).trim(),
+      nombre:      String(get('nombre','producto','Producto','Nombre')).trim(),
+      tipo:        String(get('TIPO','Tipo','tipo')).trim(),
+      subtipo:     String(get('SUBTIPO','Subtipo','subtipo')).trim(),
+      img:         String(get('img','imagen','Imagen','url','URL')).trim(),
+      precio:      parseMoney(get('precio','Precio','price','Price')),
+      costo:       parseMoney(get('costo','Costo','cost','Cost')),
+      stock:       parseIntegerLike(stockRaw),
+      min:         parseIntegerLike(minRaw)
     };
   }
 
