@@ -14,7 +14,7 @@
     :root{
       --surface:#ffffff; --surface-weak:#f6f7f9;
       --accent-50:#fff1f2; --accent-100:#ffe4e6;
-      --accent-500:#f43f5e; --accent-600:#e11d48;
+      --accent-500:#f43f5e; --accent-600:#fb8c00;
     }
     html,body{height:100%}
     .container-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:1rem}
@@ -33,16 +33,59 @@
     .navlink:hover{ background:#f3f4f6 }
     .navlink.active{ background:var(--accent-50); color:var(--accent-600) }
     .badge{ display:inline-flex; align-items:center; gap:.375rem; padding:.25rem .5rem; border-radius:999px; font-size:.75rem; color:#475569; background:#f3f4f6; }
-  </style>
-  <style>
+
     /* Tipografías en negro en todo el sitio */
     body { color:#000; }
     .text-slate-800,.text-slate-700,.text-slate-600,.text-slate-500,.text-slate-400,
     .text-gray-800,.text-gray-700,.text-gray-600,.text-gray-500,.text-gray-400 { color:#000 !important; }
     .badge { color:#000; }
   </style>
+
+ <style>
+    /* Base del “papel” del ticket/comanda (modo pantalla) */
+    .print-sheet{
+      display:none;
+      width:58mm;
+      padding:8px 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      color:#000;
+    }
+    .print-sheet hr{ border:0; border-top:1px dashed #000; margin:6px 0; }
+    .print-sheet .row{ display:flex; justify-content:space-between; gap:8px; }
+    .print-sheet .title{ text-align:center; font-weight:700; font-size:16px; }
+    .print-sheet .muted{ font-size:13px; text-align:center; }
+
+    /* SOLO impresión */
+    @media print {
+      @page { size: 58mm auto; margin: 0; }
+      html, body { margin:0; padding:0; width:58mm; }
+
+      /* Esconde TODO por defecto */
+      body * { visibility: hidden !important; }
+
+      /* Solo el target activo se ve e imprime */
+      .print-active, .print-active * { visibility: visible !important; }
+      .print-active{
+        display:block !important;
+        position:absolute; left:0; top:0;
+        width:58mm; box-sizing: border-box;
+        font-size:14px; line-height:1.25;
+      }
+    }
+  </style>
+
+  <!-- Config global (UNA sola vez) -->
+   <script>
+    const STORE_KEY = "elforastero";
+    // URL del CSV publicada (separado por coma)
+    const MENU_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTOBjJjm_oZvSOYiLN_laVNhv9iJ6wr7w2MgPNPBf7gnP153X6LART0NtA2OcPdtg/pub?gid=1904567791&single=true&output=csv";
+
+    // WebApp exclusivo de EL FORASTERO (reemplazá por tu URL)
+    const ORDERS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycby0yh448iFlkae5RGSMSTN_QEtMBQMFo4KqvdBdm_m2AqsYabvYmGYdUa7jrqFvwfx0/exec";
+    const STORE_NAME = "El Forastero";
+  </script>
 </head>
-<body class="bg-slate-50 text-black">
+<body class="bg-slate-50  text-black dark:text-black">
 
   <!-- Sidebar -->
   <aside class="hidden md:flex md:flex-col fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-200">
@@ -54,21 +97,12 @@
       </div>
     </div>
     <nav class="mt-2 px-2 space-y-1">
-      <a href="./index.html" class="navlink active" title="POS">
-        <!-- Cash/Ticket -->
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2Z"/>
-          <path d="M7 16h10"/><path d="M9.5 13h5"/>
-          <path d="M9 4h6v4l-1-.6-1 .6-1-.6-1 .6-1-.6-1 .6V4Z"/>
-        </svg>
+      <a href="./index.html" class="navlink active">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l2-2 7-7 7 7-2 2v8a1 1 0 0 1-1 1h-3m-6 0h6"/></svg>
         <span>POS</span>
       </a>
-
-      <a href="./reporte.html" class="navlink" title="Reporte">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M3 20h18"/><rect x="5" y="11" width="3" height="6" rx="1"/>
-          <rect x="10.5" y="8" width="3" height="9" rx="1"/><rect x="16" y="5" width="3" height="12" rx="1"/>
-        </svg>
+      <a href="./reporte.html" class="navlink">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h6a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/><path d="M11 11h4a2 2 0 0 1 2 2v6"/></svg>
         <span>Reporte</span>
       </a>
     </nav>
@@ -89,17 +123,6 @@
     </div>
   </header>
 
-  <!-- Config del local -->
-  <script>
-    const STORE_KEY = "elforastero";
-    // URL del CSV publicada (separado por coma)
-    const MENU_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTOBjJjm_oZvSOYiLN_laVNhv9iJ6wr7w2MgPNPBf7gnP153X6LART0NtA2OcPdtg/pub?gid=1904567791&single=true&output=csv";
-
-    // WebApp exclusivo de EL FORASTERO (reemplazá por tu URL)
-    const ORDERS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycby0yh448iFlkae5RGSMSTN_QEtMBQMFo4KqvdBdm_m2AqsYabvYmGYdUa7jrqFvwfx0/exec";
-    const STORE_NAME = "El Forastero";
-  </script>
-
   <!-- Contenido principal -->
   <main class="md:ml-64 p-4 sm:p-6">
     <div class="max-w-7xl mx-auto space-y-6">
@@ -107,7 +130,7 @@
       <!-- Header POS -->
       <div class="card p-6 flex items-center justify-between">
         <div>
-          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">POS — El Forastero</h1>
+          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">POS El Forastero</h1>
           <p class="text-sm text-gray-500">Multi-carritos · Google Sheets</p>
         </div>
         <div class="text-right">
@@ -144,7 +167,6 @@
 
         <!-- MAIN POS -->
         <section class="lg:col-span-9 col-span-12 space-y-6">
-
           <!-- Filtros -->
           <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div class="card p-4">
@@ -203,26 +225,36 @@
               </div>
               <div class="p-4 border-t flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <button id="btnGuardar" class="no-print flex-1 btn-primary rounded-2xl py-3 font-semibold">Guardar Pedido</button>
+                <button id="btnTicket"  class="no-print flex-1 btn-primary rounded-2xl py-3 font-semibold">Imprimir Ticket</button>
                 <button id="btnComanda" class="no-print flex-1 btn-primary rounded-2xl py-3 font-semibold">Imprimir Comanda</button>
               </div>
             </div>
           </section>
 
-          <!-- Ticket (impresión) -->
-          <section id="ticket" class="hidden print:block p-6">
-            <div class="max-w-sm mx-auto">
-              <h2 class="text-center text-xl font-bold mb-2">{{STORE}}</h2>
-              <div class="text-xs text-center mb-4" id="ticketMeta"></div>
-              <div id="ticketItems" class="text-sm"></div>
-              <hr class="my-2"/>
-              <div class="text-sm">
-                <div class="flex justify-between"><span>Total</span><span id="ticketTotal"></span></div>
-                <div class="flex justify-between"><span>Pago</span><span id="ticketPago"></span></div>
-                <div class="flex justify-between"><span>Vuelto</span><span id="ticketVuelto"></span></div>
-              </div>
-              <p class="text-center text-xs mt-4">¡Gracias por su compra!</p>
-            </div>
+          <!-- Hojas de impresión -->
+          <!-- Ticket Cliente -->
+          <section id="ticketCliente" class="print-sheet">
+            <div class="title" id="tck-store">El Forastero</div>
+            <div class="muted" id="tck-meta">--</div>
+            <hr>
+            <div id="tck-items"></div>
+            <hr>
+            <div class="row"><span>Total</span><span id="tck-total">$0</span></div>
+            <div class="row"><span>Pago</span><span id="tck-pago">$0</span></div>
+            <div class="row"><span>Vuelto</span><span id="tck-vuelto">$0</span></div>
+            <div class="muted" style="margin-top:6px">¡Gracias por su compra!</div>
           </section>
+
+          <!-- Comanda Cocina -->
+          <section id="comandaCocina" class="print-sheet">
+            <div class="title" id="cmd-store">El Forastero — COMANDA</div>
+            <div class="muted" id="cmd-meta">--</div>
+            <hr>
+            <div id="cmd-items"></div>
+            <hr>
+            <div class="muted">Preparar y despachar</div>
+          </section>
+
         </section>
       </div>
     </div>
@@ -233,517 +265,508 @@
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <!-- App POS -->
-  <script>
-    // ===== Menú / productos =====
-    let MENU = [];
-    const ALERTED = new Set();
+<script>
+  // ===== Menú / productos =====
+  let MENU = [];
+  const ALERTED = new Set();
 
-    // ===== Multi-Carritos =====
-    let MESAS = [];
-    let MESA_ACTUAL = null;
+  // ===== Multi-Carritos =====
+  let MESAS = [];
+  let MESA_ACTUAL = null;
 
-    // ===== Utils =====
-    const $fmt = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(Number(n||0));
-    const uid = () => 'm' + Math.random().toString(36).slice(2,9);
+  // ===== Utils =====
+  const $fmt = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(Number(n||0));
+  const uid = () => 'm' + Math.random().toString(36).slice(2,9);
 
-    // --- Storage ---
-    function loadState(){
-      try{
-        const raw = localStorage.getItem('pos-' + STORE_KEY + '-mesas');
-        if(raw){ const data = JSON.parse(raw); MESAS = data.mesas||[]; MESA_ACTUAL = data.actual||null; }
-      }catch{}
-      if(MESAS.length===0){
-        const id = uid();
-        MESAS=[{id, nombre:'Mesa 1', color:'#e11d48', items:[], cliente:'', pago:0}];
-        MESA_ACTUAL=id;
-      }
+  // --- Storage ---
+  function loadState(){
+    try{
+      const raw = localStorage.getItem('pos-1112-mesas');
+      if(raw){ const data = JSON.parse(raw); MESAS = data.mesas||[]; MESA_ACTUAL = data.actual||null; }
+    }catch{}
+    if(MESAS.length===0){
+      const id = uid();
+      MESAS=[{id, nombre:'Mesa 1', color:'#fb8c00', items:[], cliente:'', pago:0}];
+      MESA_ACTUAL=id;
     }
-    function saveState(){ localStorage.setItem('pos-' + STORE_KEY + '-mesas', JSON.stringify({mesas:MESAS, actual:MESA_ACTUAL})); }
-    function mesaActual(){ return MESAS.find(m=>m.id===MESA_ACTUAL); }
+  }
+  function saveState(){ localStorage.setItem('pos-1112-mesas', JSON.stringify({mesas:MESAS, actual:MESA_ACTUAL})); }
+  function mesaActual(){ return MESAS.find(m=>m.id===MESA_ACTUAL); }
 
-    // ====== STOCK ======
-    function reservedQtyAllMesas(rowId){
-      return MESAS.reduce((acc,m)=> acc + (m.items||[]).filter(x=>x._rowId===rowId).reduce((a,i)=>a+i.qty,0), 0);
-    }
-    function productThreshold(p){
-      const glob = Number(document.getElementById('stockMinGlobal').value||0);
-      const own = Number(p.min||p.minimo||p.alerta||0);
-      return Number.isFinite(own) && own>0 ? own : glob;
-    }
-    function availableStock(p){
-      const stock = Number(p.stock||0);
-      if(!Number.isFinite(stock)) return 0;
-      const reserved = reservedQtyAllMesas(p._rowId);
-      return Math.max(0, stock - reserved);
-    }
-    function shouldLowStock(p){
-      const min = productThreshold(p);
-      return availableStock(p) <= min && (Number(p.stock||0) > 0);
-    }
-    function shouldNoStock(p){
-      return availableStock(p) <= 0 && (Number(p.stock||0) > 0);
-    }
-    function maybeAlertLow(p){
-      if(!shouldLowStock(p)) return;
-      const key = p._rowId;
-      if(ALERTED.has(key)) return;
-      ALERTED.add(key);
-      alert('⚠️ Stock bajo de \"' + p.nombre + '\". Quedan ' + availableStock(p) + ' (umbral ' + productThreshold(p) + ').');
+  // ====== STOCK ======
+  function reservedQtyAllMesas(rowId){
+    return MESAS.reduce((acc,m)=> acc + (m.items||[]).filter(x=>x._rowId===rowId).reduce((a,i)=>a+i.qty,0), 0);
+  }
+  function productThreshold(p){
+    const glob = Number($('#stockMinGlobal').val()||0);
+    const own = Number(p.min||p.minimo||p.alerta||0);
+    return Number.isFinite(own) && own>0 ? own : glob;
+  }
+  function availableStock(p){
+    const stock = Number(p.stock||0);
+    if(!Number.isFinite(stock)) return 0;
+    const reserved = reservedQtyAllMesas(p._rowId);
+    return Math.max(0, stock - reserved);
+  }
+  function shouldLowStock(p){
+    const min = productThreshold(p);
+    return availableStock(p) <= min && (Number(p.stock||0) > 0);
+  }
+  function shouldNoStock(p){
+    return availableStock(p) <= 0 && (Number(p.stock||0) > 0);
+  }
+  function maybeAlertLow(p){
+    if(!shouldLowStock(p)) return;
+    const key = p._rowId;
+    if(ALERTED.has(key)) return;
+    ALERTED.add(key);
+    alert(`⚠️ Stock bajo de "${p.nombre}". Quedan ${availableStock(p)} (umbral ${productThreshold(p)}).`);
+  }
+
+  // --- Sidebar render ---
+  function renderMesas(){
+    const cont = $('#listaMesas');
+    cont.empty();
+    MESAS.forEach(m=>{
+      const active = m.id===MESA_ACTUAL;
+      cont.append(`
+        <div class="group flex items-center justify-between gap-2 p-2 rounded-xl border ${active?'border-[var(--accent-600)] bg-[var(--accent-50)]':'border-gray-200 hover:bg-gray-50'}">
+          <button class="flex items-center gap-2 flex-1 text-left" data-action="switch" data-id="${m.id}">
+            <span class="inline-block w-3 h-3 rounded-full" style="background:${m.color}"></span>
+            <span class="font-medium truncate">${m.nombre}</span>
+            <span class="text-xs text-gray-500 ml-auto">${m.items.reduce((a,x)=>a+x.qty,0)} ítems</span>
+          </button>
+          <div class="opacity-0 group-hover:opacity-100 transition flex gap-1">
+            <button class="btn btn-ghost text-xs px-2 py-1" title="Renombrar" data-action="rename" data-id="${m.id}">✎</button>
+            <button class="btn btn-ghost text-xs px-2 py-1" title="Duplicar" data-action="dup" data-id="${m.id}">⧉</button>
+            <button class="btn btn-ghost text-xs px-2 py-1" title="Eliminar" data-action="del" data-id="${m.id}">✕</button>
+          </div>
+        </div>`);
+    });
+    const m = mesaActual();
+    $('#mesaTitulo').text(m.nombre);
+    $('#cliente').val(m.cliente);
+    $('#pago').val(m.pago);
+    $('#colorMesa').val(m.color);
+    $('#cartWrapper').css('border-color', m.color);
+    renderCart();
+    saveState();
+  }
+
+  function nuevaMesa(nombre='Mesa '+(MESAS.length+1), color='var(--accent-600)'){
+    const m = { id:uid(), nombre, color:'#fb8c00', items:[], cliente:'', pago:0 };
+    MESAS.push(m); MESA_ACTUAL=m.id; renderMesas();
+  }
+  function duplicarMesa(id){
+    const src = MESAS.find(m=>m.id===id); if(!src) return;
+    const copy = { ...src, id:uid(), nombre: src.nombre+" (copia)", items: JSON.parse(JSON.stringify(src.items)) };
+    MESAS.push(copy); MESA_ACTUAL=copy.id; renderMesas();
+  }
+  function eliminarMesa(id){
+    if(MESAS.length===1){ alert('Debe quedar al menos una mesa.'); return; }
+    MESAS = MESAS.filter(m=>m.id!==id);
+    if(MESA_ACTUAL===id){ MESA_ACTUAL = MESAS[0].id; }
+    renderMesas();
+  }
+  function cambiarColorActual(color){ const m=mesaActual(); if(!m) return; m.color=color; $('#cartWrapper').css('border-color', color); saveState(); renderMesas(); }
+
+  // ===== Productos y filtros =====
+  function groupUnique(arr, key){ return [...new Set(arr.map(x => (x[key]||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b)); }
+  function renderFilters(){
+    const cats = groupUnique(MENU, 'categoria');
+    const catSel = $('#categoria');
+    catSel.find('option:not(:first)').remove();
+    cats.forEach(c => catSel.append(`<option value="${c}">${c}</option>`));
+    renderSubcats();
+  }
+  function renderSubcats(){
+    const cat = $('#categoria').val();
+    let list = MENU; if(cat) list = MENU.filter(x => x.categoria === cat);
+    const subs = groupUnique(list, 'subcategoria');
+    const subSel = $('#subcategoria');
+    subSel.find('option:not(:first)').remove();
+    subs.forEach(s => subSel.append(`<option value="${s}">${s}</option>`));
+  }
+  function productMatches(p){
+    const q=$('#buscar').val().trim().toLowerCase(); const cat=$('#categoria').val(); const sub=$('#subcategoria').val();
+    if(cat && p.categoria!==cat) return false; if(sub && p.subcategoria!==sub) return false; if(!q) return true;
+    return [p.nombre,p.categoria,p.subcategoria].join(' ').toLowerCase().includes(q);
+  }
+
+  function renderProducts(){
+    const cont=$('#listaProductos'); cont.empty();
+    const list=MENU.filter(productMatches);
+    $('#countProductos').text(list.length);
+
+    list.forEach(p=>{
+      const dispStock = Number.isFinite(Number(p.stock)) ? availableStock(p) : null;
+      const isLow  = dispStock!==null && shouldLowStock(p);
+      const isZero = dispStock!==null && shouldNoStock(p);
+
+      const rowClasses = `${isLow?'low-stock':''} ${isZero?'no-stock':''}`;
+      const stockHtml = (dispStock!==null)
+        ? `<span class='text-xs ${isLow?'text-red-700':'text-gray-500'}'>Stock disp.: ${dispStock}${isLow?` · min ${productThreshold(p)}`:''}</span>`
+        : `<span class='text-xs text-gray-400'>Sin stock informado</span>`;
+
+      cont.append(`
+        <div class="p-3 flex items-center gap-3 hover:bg-gray-50 ${rowClasses}">
+          <div class="flex-1">
+            <div class="font-medium title">${p.nombre}</div>
+            <div class="text-xs text-gray-500">${p.categoria}${p.subcategoria?" · "+p.subcategoria:""}</div>
+            ${stockHtml}
+          </div>
+          <div class="text-right">
+            <div class="text-base font-semibold">${$fmt(p.precio)}</div>
+            ${p.costo?`<div class="text-[11px] text-gray-500">Costo ${$fmt(p.costo)}</div>`:""}
+          </div>
+          <div>
+            <button ${isZero?'disabled':''} class="p-2 text-sm rounded-xl ${isZero?'btn cursor-not-allowed opacity-60':'btn-primary'}" data-id="${p._rowId}" data-action="add">Agregar</button>
+          </div>
+        </div>`);
+    });
+  }
+
+  // ===== Carrito (por mesa) =====
+  function addToCart(rowId){
+    const m=mesaActual(); const p=MENU.find(x=>x._rowId===rowId); if(!m||!p) return;
+
+    if(Number.isFinite(Number(p.stock))){
+      const disp = availableStock(p);
+      if(disp<=0){ alert(`Sin stock de "${p.nombre}"`); renderProducts(); return; }
     }
 
-    // --- Sidebar render ---
-    function renderMesas(){
-      const cont = $('#listaMesas');
-      cont.empty();
-      MESAS.forEach(m=>{
-        const active = m.id===MESA_ACTUAL;
-        cont.append(`
-          <div class="group flex items-center justify-between gap-2 p-2 rounded-xl border ${active?'border-[var(--accent-600)] bg-[var(--accent-50)]':'border-gray-200 hover:bg-gray-50'}">
-            <button class="flex items-center gap-2 flex-1 text-left" data-action="switch" data-id="${m.id}">
-              <span class="inline-block w-3 h-3 rounded-full" style="background:${m.color}"></span>
-              <span class="font-medium truncate">${m.nombre}</span>
-              <span class="text-xs text-gray-500 ml-auto">${m.items.reduce((a,x)=>a+x.qty,0)} ítems</span>
-            </button>
-            <div class="opacity-0 group-hover:opacity-100 transition flex gap-1">
-              <button class="btn btn-ghost text-xs px-2 py-1" title="Renombrar" data-action="rename" data-id="${m.id}">✎</button>
-              <button class="btn btn-ghost text-xs px-2 py-1" title="Duplicar" data-action="dup" data-id="${m.id}">⧉</button>
-              <button class="btn btn-ghost text-xs px-2 py-1" title="Eliminar" data-action="del" data-id="${m.id}">✕</button>
-            </div>
-          </div>`);
-      });
-      const m = mesaActual();
-      $('#mesaTitulo').text(m.nombre);
-      $('#cliente').val(m.cliente);
-      $('#pago').val(m.pago);
-      $('#colorMesa').val(m.color);
-      $('#cartWrapper').css('border-color', m.color);
-      renderCart();
-      saveState();
-    }
-
-    function nuevaMesa(nombre='Mesa '+(MESAS.length+1), color='var(--accent-600)'){
-      const m = { id:uid(), nombre, color:'#e11d48', items:[], cliente:'', pago:0 };
-      MESAS.push(m); MESA_ACTUAL=m.id; renderMesas();
-    }
-    function duplicarMesa(id){
-      const src = MESAS.find(m=>m.id===id); if(!src) return;
-      const copy = { ...src, id:uid(), nombre: src.nombre+" (copia)", items: JSON.parse(JSON.stringify(src.items)) };
-      MESAS.push(copy); MESA_ACTUAL=copy.id; renderMesas();
-    }
-    function eliminarMesa(id){
-      if(MESAS.length===1){ alert('Debe quedar al menos una mesa.'); return; }
-      MESAS = MESAS.filter(m=>m.id!==id);
-      if(MESA_ACTUAL===id){ MESA_ACTUAL = MESAS[0].id; }
-      renderMesas();
-    }
-    function cambiarColorActual(color){ const m=mesaActual(); if(!m) return; m.color=color; $('#cartWrapper').css('border-color', color); saveState(); renderMesas(); }
-
-    // ===== Productos y filtros =====
-    function groupUnique(arr, key){ return [...new Set(arr.map(x => (x[key]||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b)); }
-    function renderFilters(){
-      const cats = groupUnique(MENU, 'categoria');
-      const catSel = $('#categoria');
-      catSel.find('option:not(:first)').remove();
-      cats.forEach(c => catSel.append(`<option value="${c}">${c}</option>`));
-      renderSubcats();
-    }
-    function renderSubcats(){
-      const cat = $('#categoria').val();
-      let list = MENU; if(cat) list = MENU.filter(x => x.categoria === cat);
-      const subs = groupUnique(list, 'subcategoria');
-      const subSel = $('#subcategoria');
-      subSel.find('option:not(:first)').remove();
-      subs.forEach(s => subSel.append(`<option value="${s}">${s}</option>`));
-    }
-    function productMatches(p){
-      const q=$('#buscar').val().trim().toLowerCase(); const cat=$('#categoria').val(); const sub=$('#subcategoria').val();
-      if(cat && p.categoria!==cat) return false; if(sub && p.subcategoria!==sub) return false; if(!q) return true;
-      return [p.nombre,p.categoria,p.subcategoria].join(' ').toLowerCase().includes(q);
-    }
-
-    function renderProducts(){
-      const cont=$('#listaProductos'); cont.empty();
-      const list=MENU.filter(productMatches);
-      $('#countProductos').text(list.length);
-
-      list.forEach(p=>{
-        const dispStock = Number.isFinite(Number(p.stock)) ? availableStock(p) : null;
-        const isLow  = dispStock!==null && shouldLowStock(p);
-        const isZero = dispStock!==null && shouldNoStock(p);
-
-        const rowClasses = `${isLow?'low-stock':''} ${isZero?'no-stock':''}`;
-        const stockHtml = (dispStock!==null)
-          ? `<span class='text-xs ${isLow?'text-red-700':'text-gray-500'}'>Stock disp.: ${dispStock}${isLow?` · min ${productThreshold(p)}`:''}</span>`
-          : `<span class='text-xs text-gray-400'>Sin stock informado</span>`;
-
-        cont.append(`
-          <div class="p-3 flex items-center gap-3 hover:bg-gray-50 ${rowClasses}">
-            <div class="flex-1">
-              <div class="font-medium title">${p.nombre}</div>
-              <div class="text-xs text-gray-500">${p.categoria}${p.subcategoria?" · "+p.subcategoria:""}</div>
-              ${stockHtml}
-            </div>
-            <div class="text-right">
-              <div class="text-base font-semibold">${$fmt(p.precio)}</div>
-              ${p.costo?`<div class="text-[11px] text-gray-500">Costo ${$fmt(p.costo)}</div>`:""}
-            </div>
-            <div>
-              <button ${isZero?'disabled':''} class="p-2 text-sm rounded-xl ${isZero?'btn cursor-not-allowed opacity-60':'btn-primary'}" data-id="${p._rowId}" data-action="add">Agregar</button>
-            </div>
-          </div>`);
-      });
-    }
-
-    // ===== Carrito (por mesa) =====
-    function addToCart(rowId){
-      const m=mesaActual(); const p=MENU.find(x=>x._rowId===rowId); if(!m||!p) return;
-
+    const ex=m.items.find(x=>x._rowId===rowId);
+    if(ex){
       if(Number.isFinite(Number(p.stock))){
         const disp = availableStock(p);
-        if(disp<=0){ alert('Sin stock de \"' + p.nombre + '\"'); renderProducts(); return; }
+        if(disp<=0){ alert(`Sin stock de "${p.nombre}"`); renderProducts(); return; }
       }
-
-      const ex=m.items.find(x=>x._rowId===rowId);
-      if(ex){
-        if(Number.isFinite(Number(p.stock))){
-          const disp = availableStock(p);
-          if(disp<=0){ alert('Sin stock de \"' + p.nombre + '\"'); renderProducts(); return; }
-        }
-        ex.qty+=1;
-      }else{
-        m.items.push({_rowId:rowId,nombre:p.nombre,precio:Number(p.precio)||0,costo:Number(p.costo)||0,qty:1});
-      }
-      maybeAlertLow(p);
-      renderCart(); saveState(); renderProducts();
+      ex.qty+=1;
+    }else{
+      m.items.push({_rowId:rowId,nombre:p.nombre,precio:Number(p.precio)||0,costo:Number(p.costo)||0,qty:1});
     }
-
-    function removeFromCart(rowId){
-      const m=mesaActual(); if(!m) return;
-      m.items = m.items.filter(x=>x._rowId!==rowId);
-      renderCart(); saveState(); renderProducts();
-    }
-
-    function setQty(rowId,qty){
-      const m=mesaActual(); if(!m) return;
-      const it=m.items.find(x=>x._rowId===rowId); if(!it) return;
-      qty = Math.max(1,Number(qty)||1);
-
-      const p=MENU.find(x=>x._rowId===rowId);
-      if(Number.isFinite(Number(p?.stock))){
-        const reservedOtros = reservedQtyAllMesas(rowId) - it.qty;
-        const disp = Math.max(0, Number(p.stock||0) - reservedOtros);
-        if(qty > disp){
-          alert('Solo hay ' + disp + ' disponibles de \"' + p.nombre + '\".');
-          qty = disp>0 ? disp : 1;
-        }
-      }
-      it.qty = qty;
-      maybeAlertLow(p);
-      renderCart(); saveState(); renderProducts();
-    }
-
-    function renderCart(){
-      const m=mesaActual(); const cont=$('#cartTable'); cont.empty(); if(!m){return}
-      const CART=m.items;
-      if(CART.length===0){ cont.html('<p class="text-sm text-gray-500">No hay ítems en el carrito.</p>'); }
-      else{
-        CART.forEach(it=>{
-          const linea=it.precio*it.qty;
-          cont.append(`
-          <div class="grid grid-cols-12 gap-2 items-center py-2">
-            <div class="col-span-5">
-              <div class="font-medium">${it.nombre}</div>
-              <div class="text-xs text-gray-500">${$fmt(it.precio)} c/u</div>
-            </div>
-            <div class="col-span-3">
-              <input type="number" min="1" value="${it.qty}" data-id="${it._rowId}" data-action="qty" class="inp w-24"/>
-            </div>
-            <div class="col-span-3 text-right font-semibold">${$fmt(linea)}</div>
-            <div class="col-span-1 text-right">
-              <button class="btn btn-ghost text-xs px-2 py-1" data-id="${it._rowId}" data-action="del">✕</button>
-            </div>
-          </div>`);
-        });
-      }
-
-      const total = CART.reduce((a,x)=>a+x.precio*x.qty,0);
-      const costo = CART.reduce((a,x)=>a+(Number(x.costo)||0)*x.qty,0);
-      $('#totalBruto').text($fmt(total)); $('#totalCosto').text($fmt(costo)); $('#totalGanancia').text($fmt(total-costo));
-      const pago = Number($('#pago').val()||m.pago||0); const vuelto = Math.max(0, pago-total); $('#vuelto').text($fmt(vuelto));
-    }
-
-   // Envía la orden al Apps Script sin disparar preflight (CORS-safe)
-async function saveOrder(){
-  const m = mesaActual(); 
-  if (!m) return;
-
-  if (!ORDERS_WEBAPP_URL || ORDERS_WEBAPP_URL.startsWith('PASTE_')){
-    alert('Configura ORDERS_WEBAPP_URL'); 
-    return; 
+    maybeAlertLow(p);
+    renderCart(); saveState(); renderProducts();
   }
 
-  if (m.items.length === 0){ 
-    alert('El carrito está vacío.'); 
-    return; 
+  function removeFromCart(rowId){
+    const m=mesaActual(); if(!m) return;
+    m.items = m.items.filter(x=>x._rowId!==rowId);
+    renderCart(); saveState(); renderProducts();
   }
 
-  // Validación de stock antes de enviar
-  for (const it of m.items){
-    const p = MENU.find(x => x._rowId === it._rowId);
-    if (Number.isFinite(Number(p?.stock))){
-      const disp = availableStock(p);
-      if (it.qty > disp){
-        alert('No hay stock suficiente de "' + (p?.nombre || it?.nombre || 'Producto') + '". Disponible: ' + disp + '.');
-        return;
+  function setQty(rowId,qty){
+    const m=mesaActual(); if(!m) return;
+    const it=m.items.find(x=>x._rowId===rowId); if(!it) return;
+    qty = Math.max(1,Number(qty)||1);
+
+    const p=MENU.find(x=>x._rowId===rowId);
+    if(Number.isFinite(Number(p?.stock))){
+      const reservedOtros = reservedQtyAllMesas(rowId) - it.qty;
+      const disp = Math.max(0, Number(p.stock||0) - reservedOtros);
+      if(qty > disp){
+        alert(`Solo hay ${disp} disponibles de "${p.nombre}".`);
+        qty = disp>0 ? disp : 1;
       }
     }
+    it.qty = qty;
+    maybeAlertLow(p);
+    renderCart(); saveState(); renderProducts();
   }
 
-  // Normalizo items que viajan a la API (solo lo necesario)
-  const items = m.items.map(it => {
-    const p = MENU.find(x => x._rowId === it._rowId) || {};
-    const precioUnit = Number(p.precio ?? it.precio ?? 0);
-    return {
-      rowId: p._rowId ?? it._rowId,
-      sku: p.sku ?? null,
-      nombre: p.nombre ?? it.nombre ?? '',
-      qty: Number(it.qty || 0),
-      precio: precioUnit,
-      subtotal: Number((precioUnit * Number(it.qty || 0)).toFixed(2)),
-      categoria: p.categoria ?? null
-    };
-  });
-
-  const total = Number(items.reduce((acc, i) => acc + i.subtotal, 0).toFixed(2));
-
-  // Armamos payload “limpio” para la hoja
-  const order = {
-    mesa: m.id || m.nombre || 'SIN_MESA',
-    estado: 'PENDIENTE',
-    items,
-    total,
-    // metadatos útiles
-    created_at: new Date().toISOString(),
-    pathname: typeof location !== 'undefined' ? location.pathname : '',
-    user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
-  };
-
-  // UI: deshabilito botón si existe
-  const $btn = document.querySelector('[data-action="save-order"]');
-  const prevText = $btn ? $btn.textContent : null;
-  if ($btn){ 
-    $btn.disabled = true; 
-    $btn.textContent = 'Guardando…';
-  }
-
-  try {
-    // Envío como application/x-www-form-urlencoded (evita preflight)
-    const body = new URLSearchParams({
-      action: 'saveOrder',
-      data: JSON.stringify(order)
-    }).toString();
-
-    const res = await fetch(ORDERS_WEBAPP_URL, {
-      method: 'POST',
-      mode: 'cors',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-      },
-      body
-    });
-
-    // Apps Script suele contestar 200 aunque haya error; leemos el JSON
-    const json = await res.json().catch(() => ({}));
-
-    if (!json || json.ok !== true){
-      const msg = (json && (json.error || json.message)) || `Error al guardar (HTTP ${res.status})`;
-      throw new Error(msg);
-    }
-
-    // ÉXITO: si querés, acá ya podés descontar stock y vaciar la mesa
-    try {
-      for (const it of m.items){
-        const p = MENU.find(x => x._rowId === it._rowId);
-        if (p && Number.isFinite(Number(p.stock))){
-          p.stock = Number(p.stock) - Number(it.qty || 0);
-        }
-      }
-    } catch(_) {}
-
-    if (typeof clearMesa === 'function') clearMesa(m.id);
-    alert('¡Orden guardada!');
-
-    return json; // por si lo necesitás arriba
-
-  } catch (err){
-    console.error('saveOrder error:', err);
-    alert('No se pudo guardar la orden: ' + (err?.message || err));
-    throw err;
-
-  } finally {
-    if ($btn){ 
-      $btn.disabled = false; 
-      $btn.textContent = prevText || 'Guardar';
-    }
-  }
-}
-
-
-      const total = m.items.reduce((a,x)=>a+x.precio*x.qty,0);
-      const totalCosto = m.items.reduce((a,x)=>a+(Number(x.costo)||0)*x.qty,0);
-      const payload = {
-        store: STORE_KEY,
-        timestamp:new Date().toISOString(),
-        cliente:m.cliente||'',
-        mesa:m.nombre,
-        color:m.color,
-        total, totalCosto,
-        ganancia: total-totalCosto,
-        pago: Number(m.pago||0),
-        items: m.items.map(x=>({nombre:x.nombre,precio:x.precio,costo:x.costo,qty:x.qty}))
-      };
-
-      $('#btnGuardar').prop('disabled',true).text('Guardando…');
-      try{
-        const res = await fetch(ORDERS_WEBAPP_URL, {
-          method:'POST',
-          headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
-          body:'payload='+encodeURIComponent(JSON.stringify(payload))
-        });
-        const txt = await res.text(); let data; try{ data=JSON.parse(txt) }catch{ data={ok:true} }
-        if(!res.ok || data.ok===false) throw new Error((data && data.error) || 'Error al guardar');
-
-        for(const it of m.items){
-          const p = MENU.find(x=>x._rowId===it._rowId);
-          if(p && Number.isFinite(Number(p.stock))){
-            p.stock = Math.max(0, Number(p.stock) - it.qty);
-          }
-        }
-
-        alert('Pedido guardado ✅');
-        m.items=[]; renderCart(); saveState(); renderProducts();
-      }catch(err){
-        console.error(err);
-        alert('No se pudo guardar el pedido: '+err.message);
-      }finally{
-        $('#btnGuardar').prop('disabled',false).text('Guardar Pedido');
-      }
-    }
-
-    function printTicket(){
-      const m=mesaActual(); if(!m) return;
-      const meta = new Date().toLocaleString('es-AR') + ' · ' + m.nombre + ' · Cliente: ' + (m.cliente||'-');
-      $('#ticketMeta').text(meta); $('#ticket').html($('#ticket').html().replace('{{STORE}}', STORE_NAME));
-      const itemsHtml = m.items.map(x=>`<div class="flex justify-between"><span>${x.qty}× ${x.nombre}</span><span>${$fmt(x.qty*x.precio)}</span></div>`).join('');
-      $('#ticketItems').html(itemsHtml);
-      const total = m.items.reduce((a,x)=>a+x.precio*x.qty,0); const pago = Number(m.pago||0); const vuelto = Math.max(0, pago-total);
-      $('#ticketTotal').text($fmt(total)); $('#ticketPago').text($fmt(pago)); $('#ticketVuelto').text($fmt(vuelto));
-      window.print();
-    }
-
-    // ===== Eventos UI =====
-    function bindEvents(){
-      $('#btnNuevaMesa').on('click', ()=> nuevaMesa());
-      $('#listaMesas').on('click','[data-action="switch"]', function(){ MESA_ACTUAL=$(this).data('id'); renderMesas(); });
-      $('#listaMesas').on('click','[data-action="rename"]', function(){ const id=$(this).data('id'); const m=MESAS.find(x=>x.id===id); if(!m) return; const nv = prompt('Nuevo nombre', m.nombre); if(nv){ m.nombre=nv; if(MESA_ACTUAL===id) $('#mesaTitulo').text(nv); renderMesas(); } });
-      $('#listaMesas').on('click','[data-action="dup"]', function(){ duplicarMesa($(this).data('id')); });
-      $('#listaMesas').on('click','[data-action="del"]', function(){ eliminarMesa($(this).data('id')); });
-      $('#colorMesa').on('input', function(){ cambiarColorActual($(this).val()); });
-
-      $('#stockMinGlobal').on('input', ()=> renderProducts());
-
-      $('#categoria').on('change', function(){ renderSubcats(); renderProducts(); });
-      $('#subcategoria, #buscar').on('input change', renderProducts);
-
-      $('#listaProductos').on('click','button[data-action="add"]', function(){ addToCart($(this).data('id')); });
-
-      $('#cartTable').on('click','button[data-action="del"]', function(){ removeFromCart($(this).data('id')); });
-      $('#cartTable').on('input','input[data-action="qty"]', function(){ setQty($(this).data('id'), $(this).val()); });
-
-      $('#cliente').on('input', function(){ const m=mesaActual(); if(!m) return; m.cliente=$(this).val(); saveState(); });
-      $('#pago').on('input', function(){ const m=mesaActual(); if(!m) return; m.pago=Number($(this).val()||0); renderCart(); saveState(); });
-
-      $('#btnVaciar').on('click', function(){ const m=mesaActual(); if(!m) return; m.items=[]; renderCart(); saveState(); renderProducts(); });
-      $('#btnDuplicarMesa').on('click', function(){ duplicarMesa(MESA_ACTUAL); });
-      $('#btnGuardar').on('click', saveOrder);
-      $('#btnComanda').on('click', printTicket);
-    }
-
-    // ===== Helpers =====
-    function parseNum(v){
-      if(v===null || v===undefined) return NaN;
-      if(typeof v==='number') return v;
-      let s = String(v).trim();
-      if(!s) return NaN;
-      // quitar moneda y espacios
-      s = s.replace(/[^0-9,.\-]/g, '');
-      // si tiene coma y no punto => usar coma como decimal
-      if(s.includes(',') && !s.includes('.')){
-        s = s.replace(/\./g,'').replace(',', '.');
-      }else{
-        // miles con coma
-        s = s.replace(/,/g,'');
-      }
-      return Number(s);
-    }
-
-    // ===== Carga de menú =====
-    function normalizeRow(row, idx){
-      const nombre = row.nombre ?? row.Nombre ?? row.NOMBRE ?? row.producto ?? row.Producto ?? row.NombreItem;
-      const precio = row.precio ?? row.Precio ?? row.PRECIO ?? row.price ?? row['Precio venta'];
-      const costo  = row.costo  ?? row.Costo  ?? row.COSTO  ?? row.cost;
-      const stock  = row.stock  ?? row.Stock  ?? row.STOCK  ?? row.inventario ?? row.existencias;
-      const min    = row.min    ?? row.Min    ?? row.MIN    ?? row.minimo ?? row.Mínimo ?? row.alerta ?? row.Alerta;
-
-      const cat    = row.categoria ?? row.Categoria ?? row.CATEGORIA;
-      const sub    = row.subcategoria ?? row.Subcategoria ?? row.SUBCATEGORIA;
-
-      const nPrecio = parseNum(precio);
-      const nCosto  = parseNum(costo);
-      const nStock  = parseNum(stock);
-      const nMin    = parseNum(min);
-
-      const nombreStr = (nombre ?? '').toString().trim();
-      return {
-        _rowId:`r${idx}`,
-        categoria:(cat ?? '').toString().trim(),
-        subcategoria:(sub ?? '').toString().trim(),
-        nombre:nombreStr,
-        precio: Number.isNaN(nPrecio) ? 0 : nPrecio,
-        costo:  Number.isNaN(nCosto)  ? 0 : nCosto,
-        stock:  Number.isNaN(nStock)  ? '' : nStock,
-        min:    Number.isNaN(nMin)    ? '' : nMin
-      };
-    }
-
-    async function loadMenu(){
-      if(!MENU_CSV_URL || MENU_CSV_URL.startsWith('PASTE_')){
-        $('#statusBadge').attr('class','badge').text('Configura MENU_CSV_URL'); return;
-      }
-      $('#statusBadge').attr('class','badge').text('Cargando menú…');
-      return new Promise((resolve)=>{
-        Papa.parse(MENU_CSV_URL,{
-          download:true, header:true,
-          complete:(results)=>{
-            MENU = results.data
-              .filter(r=>r && Object.keys(r).length)
-              .map(normalizeRow)
-              .filter(x=> x.nombre && x.nombre.toUpperCase()!=='NOMBRE' );
-            ALERTED.clear();
-            renderFilters(); renderProducts(); renderCart();
-            $('#statusBadge').attr('class','badge').text('Menú sincronizado');
-            resolve();
-          },
-          error:()=>{
-            $('#statusBadge').attr('class','badge').text('Error al cargar menú');
-            resolve();
-          }
-        });
+  function renderCart(){
+    const m=mesaActual(); const cont=$('#cartTable'); cont.empty(); if(!m){return}
+    const CART=m.items;
+    if(CART.length===0){ cont.html('<p class="text-sm text-gray-500">No hay ítems en el carrito.</p>'); }
+    else{
+      CART.forEach(it=>{
+        const linea=it.precio*it.qty;
+        cont.append(`
+        <div class="grid grid-cols-12 gap-2 items-center py-2">
+          <div class="col-span-5">
+            <div class="font-medium">${it.nombre}</div>
+            <div class="text-xs text-gray-500">${$fmt(it.precio)} c/u</div>
+          </div>
+          <div class="col-span-3">
+            <input type="number" min="1" value="${it.qty}" data-id="${it._rowId}" data-action="qty" class="inp w-24"/>
+          </div>
+          <div class="col-span-3 text-right font-semibold">${$fmt(linea)}</div>
+          <div class="col-span-1 text-right">
+            <button class="btn btn-ghost text-xs px-2 py-1" data-id="${it._rowId}" data-action="del">✕</button>
+          </div>
+        </div>`);
       });
     }
 
-    // ===== Init =====
-    $(async function(){ loadState(); bindEvents(); renderMesas(); await loadMenu(); });
-  </script>
+    const total = CART.reduce((a,x)=>a+x.precio*x.qty,0);
+    const costo = CART.reduce((a,x)=>a+(Number(x.costo)||0)*x.qty,0);
+    $('#totalBruto').text($fmt(total)); $('#totalCosto').text($fmt(costo)); $('#totalGanancia').text($fmt(total-costo));
+    const pago = Number($('#pago').val()||m.pago||0); const vuelto = Math.max(0, pago-total); $('#vuelto').text($fmt(vuelto));
+  }
+
+  async function saveOrder(){
+    const m=mesaActual(); if(!m) return;
+    if(!ORDERS_WEBAPP_URL || ORDERS_WEBAPP_URL.startsWith('PASTE_')){ alert('Configura ORDERS_WEBAPP_URL'); return; }
+    if(m.items.length===0){ alert('El carrito está vacío.'); return; }
+
+    for(const it of m.items){
+      const p = MENU.find(x=>x._rowId===it._rowId);
+      if(Number.isFinite(Number(p?.stock))){
+        const disp = availableStock(p);
+        if(it.qty > disp){
+          alert(`No hay stock suficiente de "${p.nombre}". Disponible: ${disp}.`);
+          return;
+        }
+      }
+    }
+
+    const total = m.items.reduce((a,x)=>a+x.precio*x.qty,0);
+    const totalCosto = m.items.reduce((a,x)=>a+(Number(x.costo)||0)*x.qty,0);
+    const payload = {
+      timestamp:new Date().toISOString(),
+      cliente:m.cliente||'',
+      mesa:m.nombre,
+      color:m.color,
+      total, totalCosto,
+      ganancia: total-totalCosto,
+      pago: Number(m.pago||0),
+      items: m.items.map(x=>({nombre:x.nombre,precio:x.precio,costo:x.costo,qty:x.qty}))
+    };
+
+    $('#btnGuardar').prop('disabled',true).text('Guardando…');
+    try{
+      const res = await fetch(ORDERS_WEBAPP_URL, {
+        method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
+        body:'payload='+encodeURIComponent(JSON.stringify(payload))
+      });
+      const txt = await res.text(); let data; try{ data=JSON.parse(txt) }catch{ data={ok:true} }
+      if(!res.ok || data.ok===false) throw new Error((data && data.error) || 'Error al guardar');
+
+      for(const it of m.items){
+        const p = MENU.find(x=>x._rowId===it._rowId);
+        if(p && Number.isFinite(Number(p.stock))){
+          p.stock = Math.max(0, Number(p.stock) - it.qty);
+        }
+      }
+
+      alert('Pedido guardado ✅');
+      m.items=[]; renderCart(); saveState(); renderProducts();
+    }catch(err){
+      console.error(err);
+      alert('No se pudo guardar el pedido: '+err.message);
+    }finally{
+      $('#btnGuardar').prop('disabled',false).text('Guardar Pedido');
+    }
+  }
+
+  // ==== Construcción de hojas y disparo de impresión ====
+  function buildTicketCliente(m){
+    const meta = `${new Date().toLocaleString('es-AR')} · ${m.nombre} · Cliente: ${m.cliente||'-'}`;
+    const store = (typeof STORE_NAME!=='undefined' && STORE_NAME) ? STORE_NAME : 'El Forastero';
+    const elStore = document.getElementById('tck-store');
+    const elMeta  = document.getElementById('tck-meta');
+    const cont    = document.getElementById('tck-items');
+    const elTot   = document.getElementById('tck-total');
+    const elPago  = document.getElementById('tck-pago');
+    const elVuel  = document.getElementById('tck-vuelto');
+
+    if(elStore) elStore.textContent = store;
+    if(elMeta)  elMeta.textContent  = meta;
+    if(cont){
+      cont.innerHTML='';
+      m.items.forEach(x=>{
+        const row=document.createElement('div'); row.className='row';
+        row.innerHTML=`<span>${x.qty}× ${x.nombre}</span><span>${$fmt(x.qty*x.precio)}</span>`;
+        cont.appendChild(row);
+      });
+    }
+    const total = m.items.reduce((a,x)=>a + x.precio*x.qty, 0);
+    const pago  = Number(m.pago||0);
+    const vuelto= Math.max(0, pago-total);
+    if(elTot)  elTot.textContent  = $fmt(total);
+    if(elPago) elPago.textContent  = $fmt(pago);
+    if(elVuel) elVuel.textContent  = $fmt(vuelto);
+  }
+
+  function buildComandaCocina(m){
+    const meta = `${new Date().toLocaleString('es-AR')} · ${m.nombre} · Cliente: ${m.cliente||'-'}`;
+    const store = (typeof STORE_NAME!=='undefined' && STORE_NAME) ? STORE_NAME : 'El Forastero';
+    const elStore = document.getElementById('cmd-store');
+    const elMeta  = document.getElementById('cmd-meta');
+    const cont    = document.getElementById('cmd-items');
+
+    if(elStore) elStore.textContent = store + ' — COMANDA';
+    if(elMeta)  elMeta.textContent  = meta;
+    if(cont){
+      cont.innerHTML='';
+      m.items.forEach(x=>{
+        const row=document.createElement('div');
+        row.style.display='flex'; row.style.justifyContent='space-between'; row.style.gap='8px';
+        row.innerHTML = `<span>${x.qty}× ${x.nombre}</span><span>${x.notas ? x.notas : ''}</span>`;
+        cont.appendChild(row);
+      });
+    }
+  }
+
+  // NUEVO: solo imprime la sección marcada como activa
+  function printSection(sectionId){
+    const a = document.getElementById('ticketCliente');
+    const b = document.getElementById('comandaCocina');
+    if(a) a.classList.remove('print-active');
+    if(b) b.classList.remove('print-active');
+
+    const target = document.getElementById(sectionId);
+    if(target) target.classList.add('print-active');
+
+    window.print();
+
+    // Limpia marca de impresión
+    setTimeout(()=>{ if(target) target.classList.remove('print-active'); }, 250);
+  }
+
+  function printTicketCliente(){
+    const m=mesaActual(); if(!m || (m.items||[]).length===0){ alert('No hay items.'); return; }
+    buildTicketCliente(m);
+    printSection('ticketCliente');
+  }
+  function printComandaCocina(){
+    const m=mesaActual(); if(!m || (m.items||[]).length===0){ alert('No hay items.'); return; }
+    buildComandaCocina(m);
+    printSection('comandaCocina');
+  }
+
+  // ===== Eventos UI =====
+  function bindEvents(){
+    $('#btnNuevaMesa').on('click', ()=> nuevaMesa());
+    $('#listaMesas').on('click','[data-action="switch"]', function(){ MESA_ACTUAL=$(this).data('id'); renderMesas(); });
+    $('#listaMesas').on('click','[data-action="rename"]', function(){ const id=$(this).data('id'); const m=MESAS.find(x=>x.id===id); if(!m) return; const nv = prompt('Nuevo nombre', m.nombre); if(nv){ m.nombre=nv; if(MESA_ACTUAL===id) $('#mesaTitulo').text(nv); renderMesas(); } });
+    $('#listaMesas').on('click','[data-action="dup"]', function(){ duplicarMesa($(this).data('id')); });
+    $('#listaMesas').on('click','[data-action="del"]', function(){ eliminarMesa($(this).data('id')); });
+    $('#colorMesa').on('input', function(){ cambiarColorActual($(this).val()); });
+
+    $('#stockMinGlobal').on('input', ()=> renderProducts());
+
+    $('#categoria').on('change', function(){ renderSubcats(); renderProducts(); });
+    $('#subcategoria, #buscar').on('input change', renderProducts);
+
+    $('#listaProductos').on('click','button[data-action="add"]', function(){ addToCart($(this).data('id')); });
+
+    $('#cartTable').on('click','button[data-action="del"]', function(){ removeFromCart($(this).data('id')); });
+    $('#cartTable').on('input','input[data-action="qty"]', function(){ setQty($(this).data('id'), $(this).val()); });
+
+    $('#cliente').on('input', function(){ const m=mesaActual(); if(!m) return; m.cliente=$(this).val(); saveState(); });
+    $('#pago').on('input', function(){ const m=mesaActual(); if(!m) return; m.pago=Number($(this).val()||0); renderCart(); saveState(); });
+
+    $('#btnVaciar').on('click', function(){ const m=mesaActual(); if(!m) return; m.items=[]; renderCart(); saveState(); renderProducts(); });
+    $('#btnDuplicarMesa').on('click', function(){ duplicarMesa(MESA_ACTUAL); });
+    $('#btnGuardar').on('click', saveOrder);
+
+    // Botones de impresión
+    $('#btnTicket').on('click', printTicketCliente);
+    $('#btnComanda').on('click', printComandaCocina);
+  }
+
+  // ===== Carga de menú =====
+  function normalizeRow(row, idx){
+    const min = row.min ?? row.minimo ?? row.alerta ?? row.Min ?? row.Mínimo ?? row.Alerta;
+    const stock = row.stock ?? row.Stock ?? row.inventario ?? row.existencias;
+    return {
+      _rowId:`r${idx}`,
+      categoria:(row.categoria||row.Categoria||row.categoría||row.Categoría||'').toString().trim(),
+      subcategoria:(row.subcategoria||row.Subcategoria||row.Subcategoría||row['Sub-categoria']||'').toString().trim(),
+      nombre:(row.nombre||row.producto||row.Producto||row.Nombre||'').toString().trim(),
+      precio:Number(row.precio||row.Precio||row.price||0),
+      costo:Number(row.costo||row.Costo||row.cost||0),
+      stock: stock===''||stock==null ? '' : Number(stock),
+      min:   min===''||min==null   ? '' : Number(min)
+    };
+  }
+
+  async function loadMenu(){
+    if(!MENU_CSV_URL || MENU_CSV_URL.startsWith('PASTE_')){
+      $('#statusBadge').attr('class','badge').text('Configura MENU_CSV_URL'); return;
+    }
+    $('#statusBadge').attr('class','badge').text('Cargando menú…');
+    return new Promise((resolve)=>{
+      Papa.parse(MENU_CSV_URL,{
+        download:true, header:true,
+        complete:(results)=>{
+          MENU = results.data
+            .filter(r=>r && Object.keys(r).length)
+            .map(normalizeRow)
+            .filter(x=>x.nombre && !isNaN(x.precio));
+          ALERTED.clear();
+          renderFilters(); renderProducts(); renderCart();
+          $('#statusBadge').attr('class','badge').text('Menú sincronizado');
+          resolve();
+        },
+        error:()=>{
+          $('#statusBadge').attr('class','badge').text('Error al cargar menú');
+          resolve();
+        }
+      });
+    });
+  }
+
+  // ===== Init =====
+  $(async function(){ loadState(); bindEvents(); renderMesas(); await loadMenu(); });
+</script>
+
+
+<script>
+  function printSectionInPopup(sectionId){
+    const src = document.getElementById(sectionId);
+    if(!src){ alert('No se encontró la sección a imprimir'); return; }
+
+    const w = window.open('', 'print58',
+      'width=270,height=900,menubar=0,toolbar=0,location=0,status=0,scrollbars=0');
+    if(!w){ alert('El navegador bloqueó la ventana de impresión'); return; }
+
+    const css = `
+      <style>
+        @page { size: 58mm auto; margin: 0; }
+        html,body{ margin:0; padding:0; width:58mm; }
+        .sheet{ width:58mm; box-sizing:border-box; padding:8px 6px;
+                font-family: ui-monospace, monospace;
+                color:#000; font-size:12px; line-height:1.25; }
+        .sheet hr{ border:0; border-top:1px dashed #000; margin:6px 0; }
+        .row{ display:flex; justify-content:space-between; gap:8px; }
+        .title{ text-align:center; font-weight:700; font-size:14px; }
+        .muted{ font-size:10px; text-align:center; }
+      </style>
+    `;
+
+    w.document.open();
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8">${css}</head><body></body></html>`);
+    w.document.close();
+
+    const wrap = w.document.createElement('div');
+    wrap.className = 'sheet';
+    wrap.innerHTML = src.innerHTML;
+    w.document.body.appendChild(wrap);
+
+    setTimeout(() => {
+      w.focus();
+      w.print();
+      setTimeout(() => { try { w.close(); } catch(_){} }, 300);
+    }, 50);
+  }
+
+  function printTicketCliente(){
+    const m = mesaActual();
+    if(!m || (m.items||[]).length===0){ alert('No hay items.'); return; }
+    buildTicketCliente(m);
+    printSectionInPopup('ticketCliente');
+  }
+
+  function printComandaCocina(){
+    const m = mesaActual();
+    if(!m || (m.items||[]).length===0){ alert('No hay items.'); return; }
+    buildComandaCocina(m);
+    printSectionInPopup('comandaCocina');
+  }
+</script>
+
 </body>
 </html>
