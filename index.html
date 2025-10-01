@@ -472,21 +472,122 @@
       const pago = Number($('#pago').val()||m.pago||0); const vuelto = Math.max(0, pago-total); $('#vuelto').text($fmt(vuelto));
     }
 
-    async function saveOrder(){
-      const m=mesaActual(); if(!m) return;
-      if(!ORDERS_WEBAPP_URL || ORDERS_WEBAPP_URL.startsWith('PASTE_')){ alert('Configura ORDERS_WEBAPP_URL'); return; }
-      if(m.items.length===0){ alert('El carrito está vacío.'); return; }
+   // Envía la orden al Apps Script sin disparar preflight (CORS-safe)
+async function saveOrder(){
+  const m = mesaActual(); 
+  if (!m) return;
 
-      for(const it of m.items){
-        const p = MENU.find(x=>x._rowId===it._rowId);
-        if(Number.isFinite(Number(p?.stock))){
-          const disp = availableStock(p);
-          if(it.qty > disp){
-            alert('No hay stock suficiente de \"' + p.nombre + '\". Disponible: ' + disp + '.');
-            return;
-          }
+  if (!ORDERS_WEBAPP_URL || ORDERS_WEBAPP_URL.startsWith('PASTE_')){
+    alert('Configura ORDERS_WEBAPP_URL'); 
+    return; 
+  }
+
+  if (m.items.length === 0){ 
+    alert('El carrito está vacío.'); 
+    return; 
+  }
+
+  // Validación de stock antes de enviar
+  for (const it of m.items){
+    const p = MENU.find(x => x._rowId === it._rowId);
+    if (Number.isFinite(Number(p?.stock))){
+      const disp = availableStock(p);
+      if (it.qty > disp){
+        alert('No hay stock suficiente de "' + (p?.nombre || it?.nombre || 'Producto') + '". Disponible: ' + disp + '.');
+        return;
+      }
+    }
+  }
+
+  // Normalizo items que viajan a la API (solo lo necesario)
+  const items = m.items.map(it => {
+    const p = MENU.find(x => x._rowId === it._rowId) || {};
+    const precioUnit = Number(p.precio ?? it.precio ?? 0);
+    return {
+      rowId: p._rowId ?? it._rowId,
+      sku: p.sku ?? null,
+      nombre: p.nombre ?? it.nombre ?? '',
+      qty: Number(it.qty || 0),
+      precio: precioUnit,
+      subtotal: Number((precioUnit * Number(it.qty || 0)).toFixed(2)),
+      categoria: p.categoria ?? null
+    };
+  });
+
+  const total = Number(items.reduce((acc, i) => acc + i.subtotal, 0).toFixed(2));
+
+  // Armamos payload “limpio” para la hoja
+  const order = {
+    mesa: m.id || m.nombre || 'SIN_MESA',
+    estado: 'PENDIENTE',
+    items,
+    total,
+    // metadatos útiles
+    created_at: new Date().toISOString(),
+    pathname: typeof location !== 'undefined' ? location.pathname : '',
+    user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+  };
+
+  // UI: deshabilito botón si existe
+  const $btn = document.querySelector('[data-action="save-order"]');
+  const prevText = $btn ? $btn.textContent : null;
+  if ($btn){ 
+    $btn.disabled = true; 
+    $btn.textContent = 'Guardando…';
+  }
+
+  try {
+    // Envío como application/x-www-form-urlencoded (evita preflight)
+    const body = new URLSearchParams({
+      action: 'saveOrder',
+      data: JSON.stringify(order)
+    }).toString();
+
+    const res = await fetch(ORDERS_WEBAPP_URL, {
+      method: 'POST',
+      mode: 'cors',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+      },
+      body
+    });
+
+    // Apps Script suele contestar 200 aunque haya error; leemos el JSON
+    const json = await res.json().catch(() => ({}));
+
+    if (!json || json.ok !== true){
+      const msg = (json && (json.error || json.message)) || `Error al guardar (HTTP ${res.status})`;
+      throw new Error(msg);
+    }
+
+    // ÉXITO: si querés, acá ya podés descontar stock y vaciar la mesa
+    try {
+      for (const it of m.items){
+        const p = MENU.find(x => x._rowId === it._rowId);
+        if (p && Number.isFinite(Number(p.stock))){
+          p.stock = Number(p.stock) - Number(it.qty || 0);
         }
       }
+    } catch(_) {}
+
+    if (typeof clearMesa === 'function') clearMesa(m.id);
+    alert('¡Orden guardada!');
+
+    return json; // por si lo necesitás arriba
+
+  } catch (err){
+    console.error('saveOrder error:', err);
+    alert('No se pudo guardar la orden: ' + (err?.message || err));
+    throw err;
+
+  } finally {
+    if ($btn){ 
+      $btn.disabled = false; 
+      $btn.textContent = prevText || 'Guardar';
+    }
+  }
+}
+
 
       const total = m.items.reduce((a,x)=>a+x.precio*x.qty,0);
       const totalCosto = m.items.reduce((a,x)=>a+(Number(x.costo)||0)*x.qty,0);
