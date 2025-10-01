@@ -315,6 +315,76 @@
   function shouldNoStock(p){
     return availableStock(p) <= 0 && (Number(p.stock||0) > 0);
   }
+
+<script>
+// --- Parsers robustos para números de Sheets (soporta $, puntos, comas, espacios, etc.)
+function parseMoney(v){
+  if(v==null) return 0;
+  if(typeof v === 'number' && isFinite(v)) return v;
+  let s = String(v).trim();
+  if(!s) return 0;
+  // fuera símbolos y letras
+  s = s.replace(/[^0-9,\.\-]/g, '');
+  // si tiene ambos separadores, asumimos: punto = miles, coma = decimales
+  if(s.includes('.') && s.includes(',')){
+    s = s.replace(/\./g, '').replace(',', '.');
+  }else{
+    // si solo hay comas, pueden ser miles o decimales; las tratamos como miles
+    // (en tu planilla usás $ 4,000 => miles)
+    s = s.replace(/,/g, '');
+  }
+  const n = Number(s);
+  return isFinite(n) ? n : 0;
+}
+
+function parseIntegerLike(v){
+  if(v==null) return '';
+  if(typeof v === 'number' && isFinite(v)) return Math.round(v);
+  const s = String(v).trim().toLowerCase();
+  // valores que indican "sin control de stock"
+  if(s==='' || s==='no' || s==='n/a' || s==='na' || s==='false') return '';
+  // quitar todo menos dígitos y signo
+  const clean = s.replace(/[^0-9\-]/g,'');
+  if(clean==='') return '';
+  const n = Number(clean);
+  return isFinite(n) ? Math.round(n) : '';
+}
+
+// Normaliza una fila del CSV a tu modelo interno
+function normalizeRow(row, idx){
+  // alias posibles por si cambian encabezados
+  const get = (...keys)=> {
+    for(const k of keys){
+      if(Object.prototype.hasOwnProperty.call(row, k) && row[k]!=null) return row[k];
+    }
+    return '';
+  };
+
+  const minRaw   = get('min','minimo','mínimo','alerta','Min','Mínimo','Alerta');
+  const stockRaw = get('stock','Stock','inventario','existencias');
+
+  return {
+    _rowId: `r${idx}`,
+    categoria:   String(get('categoria','Categoria','categoría','Categoría')).trim(),
+    subcategoria:String(get('subcategoria','Subcategoria','subcategoría','Subcategoría','Sub-categoria')).trim(),
+    nombre:      String(get('nombre','producto','Producto','Nombre')).trim(),
+    // por si luego querés usarlos en búsqueda
+    tipo:        String(get('TIPO','Tipo','tipo')).trim(),
+    subtipo:     String(get('SUBTIPO','Subtipo','subtipo')).trim(),
+    img:         String(get('img','imagen','Imagen','url','URL')).trim(),
+    precio:      parseMoney(get('precio','Precio','price','Price')),
+    costo:       parseMoney(get('costo','Costo','cost','Cost')),
+    stock:       parseIntegerLike(stockRaw),     // '' => sin control de stock
+    min:         parseIntegerLike(minRaw)        // '' => usa umbral global
+  };
+}
+</script>
+
+
+
+
+
+  
   function maybeAlertLow(p){
     if(!shouldLowStock(p)) return;
     const key = p._rowId;
