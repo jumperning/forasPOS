@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>POS — El Forastero</title>
-<link rel="icon" href="data:;base64,iVBORw0KGgo=" />
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
   <script> window.tailwind = { config: { darkMode: 'class' } } </script>
   <script src="https://cdn.tailwindcss.com"></script>
 
@@ -29,14 +29,13 @@
     .navlink{ display:flex; gap:.625rem; align-items:center; padding:.5rem .75rem; border-radius:.75rem; color:#334155 }
     .navlink:hover{ background:#f3f4f6 }
     .navlink.active{ background:var(--accent-50); color:var(--accent-600) }
-    .badge{ display:inline-flex; align-items:center; gap:.375rem; padding:.25rem .5rem; border-radius:999px; font-size:.75rem; color:#475569; background:#f3f4f6; }
+    .badge{ display:inline-flex; align-items:center; gap:.375rem; padding:.25rem .5rem; border-radius:999px; font-size:.75rem; color:#000; background:#f3f4f6; }
     body { color:#000; }
     .text-slate-800,.text-slate-700,.text-slate-600,.text-slate-500,.text-slate-400,
     .text-gray-800,.text-gray-700,.text-gray-600,.text-gray-500,.text-gray-400 { color:#000 !important; }
-    .badge { color:#000; }
   </style>
 
- <style>
+  <style>
     .print-sheet{
       display:none;
       width:58mm;
@@ -57,15 +56,16 @@
     }
   </style>
 
+  <!-- Config global (una sola vez) -->
   <script>
     const STORE_KEY = "elforastero";
-    const ORDERS_WEBAPP_URL = '/.netlify/functions/gs-order';
     const STORE_NAME = "El Forastero";
+    const ORDERS_WEBAPP_URL = '/.netlify/functions/gs-order'; // para guardar pedidos
+    const API = '/.netlify/functions/gs-order';               // API general (menu, setStock, etc)
   </script>
 </head>
-<body class="bg-slate-50  text-black dark:text-black">
+<body class="bg-slate-50 text-black">
 
-  <!-- (UI igual que antes, omitido por brevedad en este bloque) -->
   <main class="md:ml-64 p-4 sm:p-6">
     <div class="max-w-7xl mx-auto space-y-6">
       <div class="card p-6 flex items-center justify-between">
@@ -85,10 +85,12 @@
             <button id="btnNuevaMesa" class="btn-primary text-sm rounded-xl p-2">+ Nueva</button>
           </div>
           <div id="listaMesas" class="space-y-2"></div>
+
           <div class="mt-4 p-3 rounded-xl bg-slate-50">
             <label class="block text-xs text-gray-500 mb-1">Color de la mesa seleccionada</label>
             <input id="colorMesa" type="color" class="w-full h-10 rounded cursor-pointer" />
           </div>
+
           <div class="mt-4 p-3 rounded-xl bg-slate-50">
             <label class="block text-xs text-gray-500 mb-1">Alerta stock (mínimo global)</label>
             <div class="flex items-center gap-2">
@@ -96,6 +98,7 @@
               <span class="text-xs text-gray-500">*Si un producto no trae su propio mínimo</span>
             </div>
           </div>
+
           <p class="text-xs text-gray-500 mt-4">Consejo: duplicá una mesa para armar pedidos similares y acelerar la carga.</p>
         </aside>
 
@@ -136,6 +139,7 @@
                   <button id="btnVaciar" class="btn btn-ghost text-sm rounded-xl">Vaciar</button>
                 </div>
               </div>
+
               <div class="p-4">
                 <div id="cartTable" class="w-full text-sm"></div>
                 <hr class="my-4" />
@@ -152,6 +156,7 @@
                   </div>
                 </div>
               </div>
+
               <div class="p-4 border-t flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <button id="btnGuardar" class="no-print flex-1 btn-primary rounded-2xl py-3 font-semibold">Guardar Pedido</button>
                 <button id="btnTicket"  class="no-print flex-1 btn-primary rounded-2xl py-3 font-semibold">Imprimir Ticket</button>
@@ -160,6 +165,7 @@
             </div>
           </section>
 
+          <!-- Ticket cliente -->
           <section id="ticketCliente" class="print-sheet">
             <div class="title" id="tck-store">El Forastero</div>
             <div class="muted" id="tck-meta">--</div>
@@ -172,6 +178,7 @@
             <div class="muted" style="margin-top:6px">¡Gracias por su compra!</div>
           </section>
 
+          <!-- Comanda cocina -->
           <section id="comandaCocina" class="print-sheet">
             <div class="title" id="cmd-store">El Forastero — COMANDA</div>
             <div class="muted" id="cmd-meta">--</div>
@@ -187,59 +194,9 @@
   </main>
 
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script>
-const API = '/.netlify/functions/gs-order';
-
-async function loadMenuFromSheet(){
-  const res = await fetch(`${API}?action=menu`, { method: 'GET' });
-  const json = await res.json();
-  if (!json.ok) throw new Error(json.error || 'No pude cargar el menú');
-  
-  // Normalizo los datos que vienen del sheet
-  window.MENU = (json.items || []).map(x => ({
-    sku: String(x.sku ?? '').trim(),
-    nombre: x.nombre ?? '',
-    categoria: x.categoria ?? '',
-    subcategoria: x.subcategoria ?? '',
-    precio: Number(x.precio ?? 0),
-    stock: Number(x.stock ?? 0),
-    costo: Number(x.costo ?? 0),
-    _rowId: x.sku || x.nombre
-  }));
-
-  renderMenu(); // tu función de UI que ya muestra el menú en pantalla
-}
-
-// Se ejecuta apenas carga el sitio
-document.addEventListener('DOMContentLoaded', loadMenuFromSheet);
-</script>
-
 
   <script>
-async function setStock(sku, newStock){
-  const payload = { items: [{ sku, stock: Number(newStock) }] };
-  const body = new URLSearchParams({
-    action: 'setStock',
-    data: JSON.stringify(payload)
-  }).toString();
-
-  const res = await fetch(API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-    body
-  });
-  const json = await res.json();
-  if (!json.ok) throw new Error(json.error || 'No se pudo actualizar stock');
-
-  // Actualizo también en el array local
-  const p = MENU.find(x => x.sku === sku);
-  if (p) p.stock = Number(newStock);
-
-  alert(`Stock de ${sku} actualizado a ${newStock}`);
-}
-</script>
-
-<script>
+  // ---------- Estado & helpers ----------
   let MENU = [];
   const ALERTED = new Set();
   let MESAS = [];
@@ -280,9 +237,7 @@ async function setStock(sku, newStock){
     const min = productThreshold(p);
     return availableStock(p) <= min && (Number(p.stock||0) > 0);
   }
-  function shouldNoStock(p){
-    return availableStock(p) <= 0 && (Number(p.stock||0) > 0);
-  }
+  function shouldNoStock(p){ return availableStock(p) <= 0 && (Number(p.stock||0) > 0); }
   function maybeAlertLow(p){
     if(!shouldLowStock(p)) return;
     const key = p._rowId;
@@ -297,13 +252,9 @@ async function setStock(sku, newStock){
     let s = String(v).trim();
     if(!s) return 0;
     s = s.replace(/[^0-9,.\-]/g, '');
-    if(s.includes('.') && s.includes(',')){
-      s = s.replace(/\./g, '').replace(',', '.');
-    }else{
-      s = s.replace(/,/g, '');
-    }
-    const n = Number(s);
-    return isFinite(n) ? n : 0;
+    if(s.includes('.') && s.includes(',')){ s = s.replace(/\./g, '').replace(',', '.'); }
+    else{ s = s.replace(/,/g, ''); }
+    const n = Number(s); return isFinite(n) ? n : 0;
   }
   function parseIntegerLike(v){
     if(v==null) return '';
@@ -316,44 +267,7 @@ async function setStock(sku, newStock){
     return isFinite(n) ? Math.round(n) : '';
   }
 
-  // === Canonicalizador de encabezados (trim, sin acentos, minúsculas, sin símbolos)
-  function canonKey(k){
-    return String(k).normalize('NFD')
-      .replace(/[\u0300-\u036f]/g,'')
-      .replace(/\s+/g,'')
-      .replace(/[^a-zA-Z0-9_]/g,'')
-      .toLowerCase();
-  }
-
-  function normalizeRow(row, idx){
-    const R = {};
-    for(const [k,v] of Object.entries(row)){ R[canonKey(k)] = v; }
-    const get = (...keys)=>{
-      for(const k of keys){
-        const ck = canonKey(k);
-        if(Object.prototype.hasOwnProperty.call(R, ck) && R[ck]!=null) return R[ck];
-      }
-      return '';
-    };
-    const minRaw   = get('min','minimo','mínimo','alerta','Min','Mínimo','Alerta');
-    const stockRaw = get('stock','Stock','inventario','existencias');
-
-    const out = {
-      _rowId:`r${idx}`,
-      categoria:   String(get('categoria','Categoria','categoría','Categoría')).trim(),
-      subcategoria:String(get('subcategoria','Subcategoria','subcategoría','SubCategoría','Sub-categoria')).trim(),
-      nombre:      String(get('nombre','producto','Producto','Nombre')).trim(),
-      tipo:        String(get('TIPO','Tipo','tipo')).trim(),
-      subtipo:     String(get('SUBTIPO','Subtipo','subtipo')).trim(),
-      img:         String(get('img','imagen','Imagen','url','URL')).trim(),
-      precio:      parseMoney(get('precio','Precio','price','Price')),
-      costo:       parseMoney(get('costo','Costo','cost','Cost')),
-      stock:       parseIntegerLike(stockRaw),
-      min:         parseIntegerLike(minRaw)
-    };
-    return out;
-  }
-
+  // ---------- Render ----------
   function groupUnique(arr, key){ return [...new Set(arr.map(x => (x[key]||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b)); }
   function renderFilters(){
     const cats = groupUnique(MENU, 'categoria');
@@ -397,6 +311,7 @@ async function setStock(sku, newStock){
           <div class="text-right">
             <div class="text-base font-semibold">${$fmt(p.precio)}</div>
             ${p.costo?`<div class="text-[11px] text-gray-500">Costo ${$fmt(p.costo)}</div>`:""}
+            ${p.sku ? `<button class="btn btn-ghost text-[11px] mt-1" data-action="edit-stock" data-sku="${p.sku}">Editar stock</button>` : ''}
           </div>
           <div>
             <button ${isZero?'disabled':''} class="p-2 text-sm rounded-xl ${isZero?'btn cursor-not-allowed opacity-60':'btn-primary'}" data-id="${p._rowId}" data-action="add">Agregar</button>
@@ -405,6 +320,36 @@ async function setStock(sku, newStock){
     });
   }
 
+  function renderMesas(){
+    const cont = $('#listaMesas');
+    cont.empty();
+    MESAS.forEach(m=>{
+      const active = m.id===MESA_ACTUAL;
+      cont.append(`
+        <div class="group flex items-center justify-between gap-2 p-2 rounded-xl border ${active?'border-[var(--accent-600)] bg-[var(--accent-50)]':'border-gray-200 hover:bg-gray-50'}">
+          <button class="flex items-center gap-2 flex-1 text-left" data-action="switch" data-id="${m.id}">
+            <span class="inline-block w-3 h-3 rounded-full" style="background:${m.color}"></span>
+            <span class="font-medium truncate">${m.nombre}</span>
+            <span class="text-xs text-gray-500 ml-auto">${m.items.reduce((a,x)=>a+x.qty,0)} ítems</span>
+          </button>
+          <div class="opacity-0 group-hover:opacity-100 transition flex gap-1">
+            <button class="btn btn-ghost text-xs px-2 py-1" title="Renombrar" data-action="rename" data-id="${m.id}">✎</button>
+            <button class="btn btn-ghost text-xs px-2 py-1" title="Duplicar" data-action="dup" data-id="${m.id}">⧉</button>
+            <button class="btn btn-ghost text-xs px-2 py-1" title="Eliminar" data-action="del" data-id="${m.id}">✕</button>
+          </div>
+        </div>`);
+    });
+    const m = mesaActual();
+    $('#mesaTitulo').text(m.nombre);
+    $('#cliente').val(m.cliente);
+    $('#pago').val(m.pago);
+    $('#colorMesa').val(m.color);
+    $('#cartWrapper').css('border-color', m.color);
+    renderCart();
+    saveState();
+  }
+
+  // ---------- Cart ----------
   function addToCart(rowId){
     const m=mesaActual(); const p=MENU.find(x=>x._rowId===rowId); if(!m||!p) return;
     if(Number.isFinite(Number(p.stock))){
@@ -475,10 +420,12 @@ async function setStock(sku, newStock){
     const pago = Number($('#pago').val()||m.pago||0); const vuelto = Math.max(0, pago-total); $('#vuelto').text($fmt(vuelto));
   }
 
+  // ---------- API: guardar pedido ----------
   async function saveOrder(){
     const m=mesaActual(); if(!m) return;
-    if(!ORDERS_WEBAPP_URL || ORDERS_WEBAPP_URL.startsWith('PASTE_')){ alert('Configura ORDERS_WEBAPP_URL'); return; }
+    if(!ORDERS_WEBAPP_URL){ alert('Configura ORDERS_WEBAPP_URL'); return; }
     if(m.items.length===0){ alert('El carrito está vacío.'); return; }
+
     for(const it of m.items){
       const p = MENU.find(x=>x._rowId===it._rowId);
       if(Number.isFinite(Number(p?.stock))){
@@ -489,6 +436,7 @@ async function setStock(sku, newStock){
         }
       }
     }
+
     const total = m.items.reduce((a,x)=>a+x.precio*x.qty,0);
     const totalCosto = m.items.reduce((a,x)=>a+(Number(x.costo)||0)*x.qty,0);
     const payload = {
@@ -498,23 +446,83 @@ async function setStock(sku, newStock){
       pago: Number(m.pago||0),
       items: m.items.map(x=>({nombre:x.nombre,precio:x.precio,costo:x.costo,qty:x.qty}))
     };
+
     $('#btnGuardar').prop('disabled',true).text('Guardando…');
     try{
-      const res = await fetch(ORDERS_WEBAPP_URL, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'}, body:'payload='+encodeURIComponent(JSON.stringify(payload)) });
+      const res = await fetch(ORDERS_WEBAPP_URL, {
+        method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
+        body:'payload='+encodeURIComponent(JSON.stringify(payload))
+      });
       const txt = await res.text(); let data; try{ data=JSON.parse(txt) }catch{ data={ok:true} }
       if(!res.ok || data.ok===false) throw new Error((data && data.error) || 'Error al guardar');
+
+      // Descuento local
       for(const it of m.items){
         const p = MENU.find(x=>x._rowId===it._rowId);
         if(p && Number.isFinite(Number(p.stock))){ p.stock = Math.max(0, Number(p.stock) - it.qty); }
       }
-      alert('Pedido guardado ✅'); m.items=[]; renderCart(); saveState(); renderProducts();
-    }catch(err){ console.error(err); alert('No se pudo guardar el pedido: '+err.message);
-    }finally{ $('#btnGuardar').prop('disabled',false).text('Guardar Pedido'); }
 
-    await loadMenuFromSheet(); // refresca stocks desde el Sheet
+      alert('Pedido guardado ✅');
+      m.items=[]; renderCart(); saveState(); renderProducts();
 
+      // Refrescar desde el Sheet (fuente de verdad)
+      await loadMenuFromSheet();
+    }catch(err){
+      console.error(err);
+      alert('No se pudo guardar el pedido: '+err.message);
+    }finally{
+      $('#btnGuardar').prop('disabled',false).text('Guardar Pedido');
+    }
   }
 
+  // ---------- API: menú & stock ----------
+  async function loadMenuFromSheet(){
+    const res = await fetch(`${API}?action=menu`, { method: 'GET' });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'No pude cargar el menú');
+
+    MENU = (json.items || []).map((x, idx) => ({
+      sku: String(x.sku ?? '').trim(),
+      nombre: x.nombre ?? '',
+      categoria: x.categoria ?? '',
+      subcategoria: x.subcategoria ?? '',
+      precio: Number(x.precio ?? 0),
+      stock: Number(x.stock ?? 0),
+      costo: Number(x.costo ?? 0),
+      _rowId: (x.sku && String(x.sku).trim()) || (x.nombre && String(x.nombre).trim()) || `r${idx}`
+    }));
+
+    renderFilters();
+    renderProducts();
+    renderMesas();
+
+    const $badge = document.getElementById('statusBadge');
+    if ($badge) $badge.textContent = 'Menú sincronizado';
+  }
+
+  async function setStock(sku, newStock){
+    const payload = { items: [{ sku, stock: Number(newStock) }] };
+    const body = new URLSearchParams({
+      action: 'setStock',
+      data: JSON.stringify(payload)
+    }).toString();
+
+    const res = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      body
+    });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'No se pudo actualizar stock');
+
+    // Actualizo local y refresco
+    const p = MENU.find(x => x.sku === sku);
+    if (p) p.stock = Number(newStock);
+    await loadMenuFromSheet();
+  }
+
+  // ---------- Impresión ----------
   function printSection(sectionId){
     const a = document.getElementById('ticketCliente');
     const b = document.getElementById('comandaCocina');
@@ -525,9 +533,12 @@ async function setStock(sku, newStock){
     window.print();
     setTimeout(()=>{ if(target) target.classList.remove('print-active'); }, 250);
   }
-  function buildTicketCliente(m){/* igual que antes, omitido por brevedad */}
-  function buildComandaCocina(m){/* igual que antes, omitido por brevedad */}
 
+  // (stubs de construcción de ticket/comanda)
+  function buildTicketCliente(m){}
+  function buildComandaCocina(m){}
+
+  // ---------- Eventos ----------
   function bindEvents(){
     $('#btnNuevaMesa').on('click', ()=> nuevaMesa());
     $('#listaMesas').on('click','[data-action="switch"]', function(){ MESA_ACTUAL=$(this).data('id'); renderMesas(); });
@@ -539,8 +550,26 @@ async function setStock(sku, newStock){
     $('#categoria').on('change', function(){ renderSubcats(); renderProducts(); });
     $('#subcategoria, #buscar').on('input change', renderProducts);
     $('#listaProductos').on('click','button[data-action="add"]', function(){ addToCart($(this).data('id')); });
+    $('#listaProductos').on('click','[data-action="edit-stock"]', async function(){
+      const sku = String($(this).data('sku') || '').trim();
+      if (!sku) return;
+      const p = MENU.find(x => x.sku === sku);
+      const actual = Number(p?.stock ?? 0);
+      const nv = prompt(`Nuevo stock para ${p?.nombre || sku}:`, actual);
+      if (nv == null) return;
+      const newStock = Number(nv);
+      if (!Number.isFinite(newStock) || newStock < 0) { alert('Stock inválido'); return; }
+      try{
+        await setStock(sku, newStock);
+      }catch(e){
+        console.error(e);
+        alert('No se pudo actualizar el stock: '+ (e?.message || e));
+      }
+    });
+
     $('#cartTable').on('click','button[data-action="del"]', function(){ removeFromCart($(this).data('id')); });
     $('#cartTable').on('input','input[data-action="qty"]', function(){ setQty($(this).data('id'), $(this).val()); });
+
     $('#cliente').on('input', function(){ const m=mesaActual(); if(!m) return; m.cliente=$(this).val(); saveState(); });
     $('#pago').on('input', function(){ const m=mesaActual(); if(!m) return; m.pago=Number($(this).val()||0); renderCart(); saveState(); });
     $('#btnVaciar').on('click', function(){ const m=mesaActual(); if(!m) return; m.items=[]; renderCart(); saveState(); renderProducts(); });
@@ -548,35 +577,6 @@ async function setStock(sku, newStock){
     $('#btnGuardar').on('click', saveOrder);
     $('#btnTicket').on('click', ()=>printSection('ticketCliente'));
     $('#btnComanda').on('click', ()=>printSection('comandaCocina'));
-  }
-
-  function renderMesas(){
-    const cont = $('#listaMesas');
-    cont.empty();
-    MESAS.forEach(m=>{
-      const active = m.id===MESA_ACTUAL;
-      cont.append(`
-        <div class="group flex items-center justify-between gap-2 p-2 rounded-xl border ${active?'border-[var(--accent-600)] bg-[var(--accent-50)]':'border-gray-200 hover:bg-gray-50'}">
-          <button class="flex items-center gap-2 flex-1 text-left" data-action="switch" data-id="${m.id}">
-            <span class="inline-block w-3 h-3 rounded-full" style="background:${m.color}"></span>
-            <span class="font-medium truncate">${m.nombre}</span>
-            <span class="text-xs text-gray-500 ml-auto">${m.items.reduce((a,x)=>a+x.qty,0)} ítems</span>
-          </button>
-          <div class="opacity-0 group-hover:opacity-100 transition flex gap-1">
-            <button class="btn btn-ghost text-xs px-2 py-1" title="Renombrar" data-action="rename" data-id="${m.id}">✎</button>
-            <button class="btn btn-ghost text-xs px-2 py-1" title="Duplicar" data-action="dup" data-id="${m.id}">⧉</button>
-            <button class="btn btn-ghost text-xs px-2 py-1" title="Eliminar" data-action="del" data-id="${m.id}">✕</button>
-          </div>
-        </div>`);
-    });
-    const m = mesaActual();
-    $('#mesaTitulo').text(m.nombre);
-    $('#cliente').val(m.cliente);
-    $('#pago').val(m.pago);
-    $('#colorMesa').val(m.color);
-    $('#cartWrapper').css('border-color', m.color);
-    renderCart();
-    saveState();
   }
 
   function nuevaMesa(nombre='Mesa '+(MESAS.length+1), color='var(--accent-600)'){
@@ -596,43 +596,13 @@ async function setStock(sku, newStock){
   }
   function cambiarColorActual(color){ const m=mesaActual(); if(!m) return; m.color=color; $('#cartWrapper').css('border-color', color); saveState(); renderMesas(); }
 
-  
-</script>
-<script>
-const API = '/.netlify/functions/gs-order';
-
-async function loadMenuFromSheet(){
-  const res = await fetch(`${API}?action=menu`, { method: 'GET' });
-  const json = await res.json();
-  if (!json.ok) throw new Error(json.error || 'No pude cargar el menú');
-
-  // Normalizo los datos que vienen del Sheet
-  window.MENU = (json.items || []).map((x, idx) => ({
-    sku: String(x.sku ?? '').trim(),
-    nombre: x.nombre ?? '',
-    categoria: x.categoria ?? '',
-    subcategoria: x.subcategoria ?? '',
-    precio: Number(x.precio ?? 0),
-    stock: Number(x.stock ?? 0),
-    costo: Number(x.costo ?? 0),
-    _rowId: (x.sku && String(x.sku).trim()) || (x.nombre && String(x.nombre).trim()) || `r${idx}`
-  }));
-
-  // Render de tu UI
-  renderFilters();
-  renderProducts();
-  renderMesas();
-
-  // Badge de estado (opcional)
-  const $badge = document.getElementById('statusBadge');
-  if ($badge) $badge.textContent = 'Menú sincronizado';
-}
-
-// Correr al inicio
-document.addEventListener('DOMContentLoaded', loadMenuFromSheet);
-  $(async function(){ loadState(); bindEvents(); renderMesas(); await loadMenuFromSheet(); });
-
-</script>
-
+  // ---------- Init ----------
+  $(async function(){
+    loadState();
+    bindEvents();
+    renderMesas();
+    await loadMenuFromSheet();
+  });
+  </script>
 </body>
 </html>
