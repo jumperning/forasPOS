@@ -1,6 +1,6 @@
 // netlify/functions/gs-order.js
-exports.handler = async (event) => {
-  const target = process.env.GS_WEBAPP_URL; // URL /exec del último deployment de tu GAS
+export async function handler(event) {
+  const target = process.env.GS_WEBAPP_URL; // URL /exec de tu GAS
   const cors = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
@@ -17,33 +17,29 @@ exports.handler = async (event) => {
   }
 
   try {
-    let url = target;
-    let fetchOpts = {};
+    const method = event.httpMethod || 'GET';
+    const url = method === 'GET'
+      ? (event.rawQuery ? `${target}?${event.rawQuery}` : target)
+      : target;
 
-    if (event.httpMethod === 'GET') {
-      const qs = event.rawQuery || '';
-      url = qs ? `${target}?${qs}` : target;
-      fetchOpts = { method: 'GET' };
-    } else if (event.httpMethod === 'POST') {
-      // reenviamos form-urlencoded tal cual
-      fetchOpts = {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-        body: event.body
-      };
-    } else {
-      return { statusCode: 405, headers: cors, body: 'Method Not Allowed' };
-    }
+    const fetchOpts = {
+      method,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+      body: method === 'POST' ? event.body : undefined,
+      redirect: 'follow'
+    };
 
-    const res = await fetch(url, fetchOpts);
-    const text = await res.text();
-    // devolvemos como JSON si es parseable
-    let body = text, ct = 'application/json';
-    try { body = JSON.stringify(JSON.parse(text)); } catch { ct = 'text/plain'; }
+    const resp = await fetch(url, fetchOpts);
+    const text = await resp.text();
+    const ct = resp.headers.get('content-type') || 'application/json';
 
-    return { statusCode: res.status, headers: { ...cors, 'Content-Type': ct }, body };
+    return {
+      statusCode: resp.status,
+      headers: { ...cors, 'Content-Type': ct },
+      body: text
+    };
 
   } catch (err) {
-    return { statusCode: 500, headers: cors, body: JSON.stringify({ ok:false, error: String(err) }) };
+    return { statusCode: 500, headers: cors, body: JSON.stringify({ ok:false, error:String(err) }) };
   }
-};
+}
