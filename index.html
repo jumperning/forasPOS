@@ -59,7 +59,6 @@
 
   <script>
     const STORE_KEY = "elforastero";
-    const MENU_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTOBjJjm_oZvSOYiLN_laVNhv9iJ6wr7w2MgPNPBf7gnP153X6LART0NtA2OcPdtg/pub?gid=1904567791&single=true&output=csv";
     const ORDERS_WEBAPP_URL = '/.netlify/functions/gs-order';
     const STORE_NAME = "El Forastero";
   </script>
@@ -188,7 +187,57 @@
   </main>
 
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script>
+const API = '/.netlify/functions/gs-order';
+
+async function loadMenuFromSheet(){
+  const res = await fetch(`${API}?action=menu`, { method: 'GET' });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'No pude cargar el menú');
+  
+  // Normalizo los datos que vienen del sheet
+  window.MENU = (json.items || []).map(x => ({
+    sku: String(x.sku ?? '').trim(),
+    nombre: x.nombre ?? '',
+    categoria: x.categoria ?? '',
+    subcategoria: x.subcategoria ?? '',
+    precio: Number(x.precio ?? 0),
+    stock: Number(x.stock ?? 0),
+    costo: Number(x.costo ?? 0),
+    _rowId: x.sku || x.nombre
+  }));
+
+  renderMenu(); // tu función de UI que ya muestra el menú en pantalla
+}
+
+// Se ejecuta apenas carga el sitio
+document.addEventListener('DOMContentLoaded', loadMenuFromSheet);
+</script>
+
+
+  <script>
+async function setStock(sku, newStock){
+  const payload = { items: [{ sku, stock: Number(newStock) }] };
+  const body = new URLSearchParams({
+    action: 'setStock',
+    data: JSON.stringify(payload)
+  }).toString();
+
+  const res = await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+    body
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'No se pudo actualizar stock');
+
+  // Actualizo también en el array local
+  const p = MENU.find(x => x.sku === sku);
+  if (p) p.stock = Number(newStock);
+
+  alert(`Stock de ${sku} actualizado a ${newStock}`);
+}
+</script>
 
 <script>
   let MENU = [];
@@ -461,6 +510,9 @@
       alert('Pedido guardado ✅'); m.items=[]; renderCart(); saveState(); renderProducts();
     }catch(err){ console.error(err); alert('No se pudo guardar el pedido: '+err.message);
     }finally{ $('#btnGuardar').prop('disabled',false).text('Guardar Pedido'); }
+
+    await loadMenuFromSheet(); // refresca stocks desde el Sheet
+
   }
 
   function printSection(sectionId){
@@ -544,35 +596,42 @@
   }
   function cambiarColorActual(color){ const m=mesaActual(); if(!m) return; m.color=color; $('#cartWrapper').css('border-color', color); saveState(); renderMesas(); }
 
-  async function loadMenu(){
-    if(!MENU_CSV_URL || MENU_CSV_URL.startsWith('PASTE_')){
-      $('#statusBadge').attr('class','badge').text('Configura MENU_CSV_URL'); return;
-    }
-    $('#statusBadge').attr('class','badge').text('Cargando menú…');
-    return new Promise((resolve)=>{
-      Papa.parse(MENU_CSV_URL,{
-        download:true, header:true, skipEmptyLines:true,
-        complete:(results)=>{
-          console.log('Headers ejemplo:', Object.keys(results.data[0]||{}));
-          MENU = results.data
-            .filter(r=>r && Object.keys(r).length && !Object.values(r).every(v=>String(v||'').trim()===''))
-            .map(normalizeRow)
-            .filter(x=>x.nombre); // No descartamos por precio: si falta, va 0
-          ALERTED.clear();
-          renderFilters(); renderProducts(); renderMesas(); renderCart();
-          $('#statusBadge').attr('class','badge').text('Menú sincronizado');
-          resolve();
-        },
-        error:(e)=>{
-          console.error('Papa error', e);
-          $('#statusBadge').attr('class','badge').text('Error al cargar menú');
-          resolve();
-        }
-      });
-    });
-  }
+  
+</script>
+<script>
+const API = '/.netlify/functions/gs-order';
 
-  $(async function(){ loadState(); bindEvents(); renderMesas(); await loadMenu(); });
+async function loadMenuFromSheet(){
+  const res = await fetch(`${API}?action=menu`, { method: 'GET' });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'No pude cargar el menú');
+
+  // Normalizo los datos que vienen del Sheet
+  window.MENU = (json.items || []).map((x, idx) => ({
+    sku: String(x.sku ?? '').trim(),
+    nombre: x.nombre ?? '',
+    categoria: x.categoria ?? '',
+    subcategoria: x.subcategoria ?? '',
+    precio: Number(x.precio ?? 0),
+    stock: Number(x.stock ?? 0),
+    costo: Number(x.costo ?? 0),
+    _rowId: (x.sku && String(x.sku).trim()) || (x.nombre && String(x.nombre).trim()) || `r${idx}`
+  }));
+
+  // Render de tu UI
+  renderFilters();
+  renderProducts();
+  renderMesas();
+
+  // Badge de estado (opcional)
+  const $badge = document.getElementById('statusBadge');
+  if ($badge) $badge.textContent = 'Menú sincronizado';
+}
+
+// Correr al inicio
+document.addEventListener('DOMContentLoaded', loadMenuFromSheet);
+  $(async function(){ loadState(); bindEvents(); renderMesas(); await loadMenuFromSheet(); });
+
 </script>
 
 </body>
