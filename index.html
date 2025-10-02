@@ -449,21 +449,24 @@
 
     $('#btnGuardar').prop('disabled',true).text('Guardando…');
     try{
-      const res = await fetch(ORDERS_WEBAPP_URL, {
-        method:'POST',
-        headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
-        body:'payload='+encodeURIComponent(JSON.stringify(payload))
-      });
-      const txt = await res.text(); let data; try{ data=JSON.parse(txt) }catch{ data={ok:true} }
-      if(!res.ok || data.ok===false) throw new Error((data && data.error) || 'Error al guardar');
+ const res = await fetch('/.netlify/functions/gs-order', {
+  method:'POST',
+  headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
+  body:'payload='+encodeURIComponent(JSON.stringify(payload))
+});
+if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      // Descuento local
-      for(const it of m.items){
-        const p = MENU.find(x=>x._rowId===it._rowId);
-        if(p && Number.isFinite(Number(p.stock))){ p.stock = Math.max(0, Number(p.stock) - it.qty); }
-      }
+let data;
+try { data = await res.json(); }
+catch { throw new Error('Respuesta no-JSON del servidor'); }
 
-      alert('Pedido guardado ✅');
+if (data.ok !== true || data.marker !== 'SALE_RECEIVED') {
+  throw new Error(data.error || 'Servidor no confirmó la venta');
+}
+
+alert(`Pedido guardado ✅
+Hoja: ${data.spreadsheetUrl}
+Fila: ${data.ventasLastRow}`);
       m.items=[]; renderCart(); saveState(); renderProducts();
 
       // Refrescar desde el Sheet (fuente de verdad)
