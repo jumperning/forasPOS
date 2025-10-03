@@ -226,27 +226,35 @@
   }
 
   // Un producto controla stock SOLO si stock es un número real
-  function controlsStock(p){
-    return p != null && p.stock !== null && p.stock !== '' && Number.isFinite(Number(p.stock));
-  }
+ function controlsStock(p){
+  return (
+    p != null &&
+    p.stock !== null &&
+    p.stock !== '' &&
+    Number.isFinite(Number(p.stock))
+  );
+}
     
 
-  function availableStock(p){
-    if (!controlsStock(p)) return Infinity;         // sin control de stock, no limitar
-    const stock = Number(p.stock);
-    const reserved = reservedQtyAllMesas(p._rowId);
-    return Math.max(0, stock - reserved);
-  }
+// Stock disponible (si no controla stock, no lo limitamos)
+function availableStock(p){
+  if (!controlsStock(p)) return Infinity;
+  const stock = Number(p.stock);
+  const reserved = reservedQtyAllMesas(p._rowId);
+  return Math.max(0, stock - reserved);
+}
 
-  function shouldLowStock(p){
-    if (!controlsStock(p)) return false;
-    const min = productThreshold(p);
-    return availableStock(p) <= min && (Number(p.stock||0) > 0);
-  }
-  function shouldNoStock(p){
-    if (!controlsStock(p)) return false;
-    return availableStock(p) <= 0 && (Number(p.stock||0) > 0);
-  }
+    
+// (opcionales pero recomendadas) usar controlsStock en estos checks:
+function shouldLowStock(p){
+  if (!controlsStock(p)) return false;
+  const min = productThreshold(p);
+  return availableStock(p) <= min && Number(p.stock) > 0;
+}
+function shouldNoStock(p){
+  if (!controlsStock(p)) return false;
+  return availableStock(p) <= 0 && Number(p.stock) > 0;
+}
   function maybeAlertLow(p){
     if(!shouldLowStock(p)) return;
     const key = p._rowId;
