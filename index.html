@@ -372,7 +372,7 @@
             <div>
               <button ${isZero?'disabled':''}
                 class="p-2 text-sm rounded-xl ${isZero?'btn cursor-not-allowed opacity-60':'btn-primary'}"
-                data-id="${p._rowId}" data-action="add">Agregar</button>
+                data-id="${String(p._rowId)}" data-action="add">Agregar</button>
             </div>
           </div>`);
       });
@@ -421,24 +421,18 @@
 
   // ---------- Cart ----------
   function addToCart(rowId){
-    const m=mesaActual(); const p=MENU.find(x=>x._rowId===rowId); if(!m||!p) return;
-    if(controlsStock(p)){
-      const disp = availableStock(p);
-      if(disp<=0){ alert(`Sin stock de "${p.nombre}"`); renderProducts(); return; }
-    }
-    const ex=m.items.find(x=>x._rowId===rowId);
-    if(ex){
-      if(controlsStock(p)){
-        const disp = availableStock(p);
-        if(disp<=0){ alert(`Sin stock de "${p.nombre}"`); renderProducts(); return; }
-      }
-      ex.qty+=1;
-    }else{
-      m.items.push({_rowId:rowId,nombre:p.nombre,precio:Number(p.precio)||0,costo:Number(p.costo)||0,qty:1});
-    }
-    maybeAlertLow(p);
-    renderCart(); saveState(); renderProducts();
-  }
+   const m = mesaActual();
+   if (!m) return;
+   let p = MENU.find(x => x._rowId === rowId);
+   if (!p) {
+     // fallback por nombre, por si el id coincide con nombre
+     p = MENU.find(x => String(x.nombre || '').trim() === String(rowId || '').trim());
+   }
+   if (!p) {
+     console.warn('No encontré el producto para rowId:', rowId);
+     alert('No pude identificar el producto en el menú.');
+     return;
+   }
   function removeFromCart(rowId){
     const m=mesaActual(); if(!m) return;
     m.items = m.items.filter(x=>x._rowId!==rowId);
@@ -566,7 +560,7 @@
         precio: Number(x.precio ?? 0),
         costo: Number(x.costo ?? 0),
         stock,
-        _rowId: sku || nombre || `r${idx}`
+          _rowId: String(sku || nombre || `r${idx}`)  // <-- SIEMPRE string válido
       };
     });
 
@@ -629,7 +623,16 @@
     $('#stockMinGlobal').on('input', ()=> renderProducts());
     $('#categoria').on('change', function(){ renderSubcats(); renderProducts(); });
     $('#subcategoria, #buscar').on('input change', renderProducts);
-    $('#listaProductos').on('click','button[data-action="add"]', function(){ addToCart($(this).data('id')); });
+    $('#listaProductos').on('click','button[data-action="add"]', function(){
+   // tomar id de forma robusta (jQuery a veces cachea .data())
+   let id = $(this).attr('data-id') || $(this).data('id');
+   if (!id) {
+     console.warn('ADD sin data-id en el botón', this);
+     alert('No pude identificar el producto. Actualizá el menú e intentá de nuevo.');
+     return;
+   }
+   addToCart(String(id));
+ });
     $('#listaProductos').on('click','[data-action="edit-stock"]', async function(){
       const sku = String($(this).data('sku') || '').trim();
       if (!sku) return;
