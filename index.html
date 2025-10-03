@@ -229,6 +229,7 @@
   function controlsStock(p){
     return p != null && p.stock !== null && p.stock !== '' && Number.isFinite(Number(p.stock));
   }
+    
 
   function availableStock(p){
     if (!controlsStock(p)) return Infinity;         // sin control de stock, no limitar
@@ -295,39 +296,50 @@
   }
 
   // Filtro robusto
-  function productMatches(p){
-    const q   = ($('#buscar').val()||'').toString().trim().toLowerCase();
-    const cat = ($('#categoria').val()||'').toString().trim();
-    const sub = ($('#subcategoria').val()||'').toString().trim();
+// Filtro robusto y tolerante a undefined/null
+function productMatches(p){
+  if (!p) return false;
+  const q   = String($('#buscar').val() || '').trim().toLowerCase();
+  const cat = String($('#categoria').val() || '').trim();
+  const sub = String($('#subcategoria').val() || '').trim();
 
-    const pc = (p.categoria||'').toString().trim();
-    const ps = (p.subcategoria||'').toString().trim();
+  const pc = String(p.categoria ?? '').trim();
+  const ps = String(p.subcategoria ?? '').trim();
 
-    if (cat && pc !== cat) return false;
-    if (sub && ps !== sub) return false;
+  if (cat && pc !== cat) return false;
+  if (sub && ps !== sub) return false;
 
-    if (!q) return true;
-    const haystack = [p.nombre,p.categoria,p.subcategoria,p.sku,p.tipo,p.subtipo]
-      .filter(Boolean).map(x=>x.toString().toLowerCase()).join(' ');
-    return haystack.includes(q);
-  }
+  if (!q) return true;
+  const haystack = [
+    p.nombre, p.categoria, p.subcategoria, p.sku, p.tipo, p.subtipo, p.descripcion
+  ].filter(Boolean).map(x => String(x).toLowerCase()).join(' ');
+  return haystack.includes(q);
+}
 
-  function renderProducts(){
-    const cont=$('#listaProductos'); cont.empty();
-    let list=MENU.filter(productMatches);
 
-    // Fallback si el filtro quedó vacío accidentalmente
-    if (list.length===0 && MENU.length>0){
-      console.warn('Filtro dio 0, usando fallback con todo el menú');
+
+    
+
+function renderProducts(){
+  const cont = $('#listaProductos');
+  cont.empty();
+
+  try{
+    let list = Array.isArray(MENU) ? MENU.filter(productMatches) : [];
+    // fallback si el filtro quedó vacío accidentalmente
+    if (list.length === 0 && Array.isArray(MENU) && MENU.length > 0) {
+      console.warn('Filtro dio 0, uso todo el menú como fallback');
       list = MENU.slice();
     }
 
     $('#countProductos').text(list.length);
+
     list.forEach(p=>{
       const ctrl = controlsStock(p);
       const dispStock = ctrl ? availableStock(p) : null;
       const isLow  = ctrl && shouldLowStock(p);
       const isZero = ctrl && shouldNoStock(p);
+
       const rowClasses = `${isLow?'low-stock':''} ${isZero?'no-stock':''}`;
       const stockHtml = ctrl
         ? `<span class='text-xs ${isLow?'text-red-700':'text-gray-500'}'>Stock disp.: ${dispStock}${isLow?` · min ${productThreshold(p)}`:''}</span>`
@@ -336,21 +348,41 @@
       cont.append(`
         <div class="p-3 flex items-center gap-3 hover:bg-gray-50 ${rowClasses}">
           <div class="flex-1">
-            <div class="font-medium title">${p.nombre}</div>
-            <div class="text-xs text-gray-500">${p.categoria||''}${p.subcategoria?` · ${p.subcategoria}`:''}</div>
+            <div class="font-medium title">${p.nombre ?? '(sin nombre)'}</div>
+            <div class="text-xs text-gray-500">${(p.categoria||'')}${p.subcategoria?` · ${p.subcategoria}`:''}</div>
             ${stockHtml}
           </div>
           <div class="text-right">
             <div class="text-base font-semibold">${$fmt(p.precio)}</div>
-            ${p.costo?`<div class="text-[11px] text-gray-500">Costo ${$fmt(p.costo)}</div>`:""}
+            ${p.costo?`<div class="text-[11px] text-gray-500">Costo ${$fmt(p.costo)}</div>`:''}
             ${p.sku ? `<button class="btn btn-ghost text-[11px] mt-1" data-action="edit-stock" data-sku="${p.sku}">Editar stock</button>` : ''}
           </div>
           <div>
-            <button ${isZero?'disabled':''} class="p-2 text-sm rounded-xl ${isZero?'btn cursor-not-allowed opacity-60':'btn-primary'}" data-id="${p._rowId}" data-action="add">Agregar</button>
+            <button ${isZero?'disabled':''}
+              class="p-2 text-sm rounded-xl ${isZero?'btn cursor-not-allowed opacity-60':'btn-primary'}"
+              data-id="${p._rowId}" data-action="add">Agregar</button>
           </div>
         </div>`);
     });
+
+    // Si a pesar de todo no pintó nada, muestro un placeholder
+    if (cont.children().length === 0) {
+      cont.html(`<div class="p-4 text-sm text-gray-500">No hay productos para mostrar.</div>`);
+    }
+  } catch (err){
+    console.error('renderProducts error:', err);
+    // Fallback ultra simple para no quedarnos sin UI
+    const list = Array.isArray(MENU) ? MENU : [];
+    $('#countProductos').text(list.length);
+    cont.append(list.map(p => `
+      <div class="p-2 flex items-center justify-between">
+        <div>${p.nombre ?? '(sin nombre)'}</div>
+        <button class="btn btn-primary text-sm" data-id="${p._rowId}" data-action="add">Agregar</button>
+      </div>
+    `).join(''));
   }
+}
+
 
   function renderMesas(){
     const cont = $('#listaMesas');
