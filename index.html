@@ -480,29 +480,42 @@ Fila: ${data.ventasLastRow}`);
   }
 
   // ---------- API: menú & stock ----------
-  async function loadMenuFromSheet(){
-    const res = await fetch(`${API}?action=menu`, { method: 'GET' });
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error || 'No pude cargar el menú');
+async function loadMenuFromSheet(){
+  const res = await fetch(`${API}?action=menu`, { method: 'GET' });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'No pude cargar el menú');
 
-    MENU = (json.items || []).map((x, idx) => ({
-      sku: String(x.sku ?? '').trim(),
-      nombre: x.nombre ?? '',
+  window.MENU = (json.items || []).map((x, idx) => {
+    const sku = (x.sku ?? '').toString().trim();
+    const nombre = (x.nombre ?? '').toString().trim();
+
+    // ⚠️ clave: NO convertir vacío en 0
+    const rawStock = x.stock;
+    const stock = (rawStock === '' || rawStock === null || rawStock === undefined)
+      ? null                          // => no controlar stock
+      : Number(rawStock);             // => controlar stock solo si es número
+
+    return {
+      sku,
+      nombre,
       categoria: x.categoria ?? '',
       subcategoria: x.subcategoria ?? '',
       precio: Number(x.precio ?? 0),
-      stock: Number(x.stock ?? 0),
       costo: Number(x.costo ?? 0),
-      _rowId: (x.sku && String(x.sku).trim()) || (x.nombre && String(x.nombre).trim()) || `r${idx}`
-    }));
+      stock,                          // ← ahora puede ser null o un número
+      _rowId: sku || nombre || `r${idx}`
+    };
+  });
 
-    renderFilters();
-    renderProducts();
-    renderMesas();
+  // Render de tu UI
+  renderFilters();
+  renderProducts();
+  renderMesas();
 
-    const $badge = document.getElementById('statusBadge');
-    if ($badge) $badge.textContent = 'Menú sincronizado';
-  }
+  const $badge = document.getElementById('statusBadge');
+  if ($badge) $badge.textContent = 'Menú sincronizado';
+}
+
 
   async function setStock(sku, newStock){
     const payload = { items: [{ sku, stock: Number(newStock) }] };
