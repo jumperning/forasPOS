@@ -26,6 +26,9 @@
     .btn-ghost:hover{ background:#f9fafb }
     .inp{ border-radius:.75rem; border:1px solid #e5e7eb; padding:.5rem .75rem }
     .inp:focus{ outline:none; box-shadow:0 0 0 3px rgba(244,63,94,.15),0 0 0 1px var(--accent-500); border-color:var(--accent-500) }
+    .navlink{ display:flex; gap:.625rem; align-items:center; padding:.5rem .75rem; border-radius:.75rem; color:#334155 }
+    .navlink:hover{ background:#f3f4f6 }
+    .navlink.active{ background:var(--accent-50); color:var(--accent-600) }
     .badge{ display:inline-flex; align-items:center; gap:.375rem; padding:.25rem .5rem; border-radius:999px; font-size:.75rem; color:#000; background:#f3f4f6; }
     body { color:#000; }
     .text-slate-800,.text-slate-700,.text-slate-600,.text-slate-500,.text-slate-400,
@@ -225,36 +228,37 @@
     return Number.isFinite(own) && own>0 ? own : glob;
   }
 
-  // Un producto controla stock SOLO si stock es un número real
- function controlsStock(p){
-  return (
-    p != null &&
-    p.stock !== null &&
-    p.stock !== '' &&
-    Number.isFinite(Number(p.stock))
-  );
-}
-    
+  // ——— STOCK: helpers sólidos ———
 
-// Stock disponible (si no controla stock, no lo limitamos)
-function availableStock(p){
-  if (!controlsStock(p)) return Infinity;
-  const stock = Number(p.stock);
-  const reserved = reservedQtyAllMesas(p._rowId);
-  return Math.max(0, stock - reserved);
-}
+  // ¿Este producto controla stock?
+  function controlsStock(p){
+    return (
+      p != null &&
+      p.stock !== null &&
+      p.stock !== '' &&
+      Number.isFinite(Number(p.stock))
+    );
+  }
 
-    
-// (opcionales pero recomendadas) usar controlsStock en estos checks:
-function shouldLowStock(p){
-  if (!controlsStock(p)) return false;
-  const min = productThreshold(p);
-  return availableStock(p) <= min && Number(p.stock) > 0;
-}
-function shouldNoStock(p){
-  if (!controlsStock(p)) return false;
-  return availableStock(p) <= 0 && Number(p.stock) > 0;
-}
+  // Stock disponible (si no controla stock, no limitar)
+  function availableStock(p){
+    if (!controlsStock(p)) return Infinity;
+    const stock = Number(p.stock);
+    const reserved = reservedQtyAllMesas(p._rowId);
+    return Math.max(0, stock - reserved);
+  }
+
+  // Bajo / Sin stock (solo si controla stock)
+  function shouldLowStock(p){
+    if (!controlsStock(p)) return false;
+    const min = productThreshold(p);
+    return availableStock(p) <= min && Number(p.stock) > 0;
+  }
+  function shouldNoStock(p){
+    if (!controlsStock(p)) return false;
+    return availableStock(p) <= 0 && Number(p.stock) > 0;
+  }
+
   function maybeAlertLow(p){
     if(!shouldLowStock(p)) return;
     const key = p._rowId;
@@ -303,94 +307,88 @@ function shouldNoStock(p){
     subs.forEach(s => subSel.append(`<option value="${s}">${s}</option>`));
   }
 
-  // Filtro robusto
-// Filtro robusto y tolerante a undefined/null
-function productMatches(p){
-  if (!p) return false;
-  const q   = String($('#buscar').val() || '').trim().toLowerCase();
-  const cat = String($('#categoria').val() || '').trim();
-  const sub = String($('#subcategoria').val() || '').trim();
+  // Filtro robusto (tolera undefined/null y múltiples campos)
+  function productMatches(p){
+    if (!p) return false;
+    const q   = String($('#buscar').val() || '').trim().toLowerCase();
+    const cat = String($('#categoria').val() || '').trim();
+    const sub = String($('#subcategoria').val() || '').trim();
 
-  const pc = String(p.categoria ?? '').trim();
-  const ps = String(p.subcategoria ?? '').trim();
+    const pc = String(p.categoria ?? '').trim();
+    const ps = String(p.subcategoria ?? '').trim();
 
-  if (cat && pc !== cat) return false;
-  if (sub && ps !== sub) return false;
+    if (cat && pc !== cat) return false;
+    if (sub && ps !== sub) return false;
 
-  if (!q) return true;
-  const haystack = [
-    p.nombre, p.categoria, p.subcategoria, p.sku, p.tipo, p.subtipo, p.descripcion
-  ].filter(Boolean).map(x => String(x).toLowerCase()).join(' ');
-  return haystack.includes(q);
-}
-
-
-
-    
-
-function renderProducts(){
-  const cont = $('#listaProductos');
-  cont.empty();
-
-  try{
-    let list = Array.isArray(MENU) ? MENU.filter(productMatches) : [];
-    // fallback si el filtro quedó vacío accidentalmente
-    if (list.length === 0 && Array.isArray(MENU) && MENU.length > 0) {
-      console.warn('Filtro dio 0, uso todo el menú como fallback');
-      list = MENU.slice();
-    }
-
-    $('#countProductos').text(list.length);
-
-    list.forEach(p=>{
-      const ctrl = controlsStock(p);
-      const dispStock = ctrl ? availableStock(p) : null;
-      const isLow  = ctrl && shouldLowStock(p);
-      const isZero = ctrl && shouldNoStock(p);
-
-      const rowClasses = `${isLow?'low-stock':''} ${isZero?'no-stock':''}`;
-      const stockHtml = ctrl
-        ? `<span class='text-xs ${isLow?'text-red-700':'text-gray-500'}'>Stock disp.: ${dispStock}${isLow?` · min ${productThreshold(p)}`:''}</span>`
-        : `<span class='text-xs text-gray-400'>Sin stock informado</span>`;
-
-      cont.append(`
-        <div class="p-3 flex items-center gap-3 hover:bg-gray-50 ${rowClasses}">
-          <div class="flex-1">
-            <div class="font-medium title">${p.nombre ?? '(sin nombre)'}</div>
-            <div class="text-xs text-gray-500">${(p.categoria||'')}${p.subcategoria?` · ${p.subcategoria}`:''}</div>
-            ${stockHtml}
-          </div>
-          <div class="text-right">
-            <div class="text-base font-semibold">${$fmt(p.precio)}</div>
-            ${p.costo?`<div class="text-[11px] text-gray-500">Costo ${$fmt(p.costo)}</div>`:''}
-            ${p.sku ? `<button class="btn btn-ghost text-[11px] mt-1" data-action="edit-stock" data-sku="${p.sku}">Editar stock</button>` : ''}
-          </div>
-          <div>
-            <button ${isZero?'disabled':''}
-              class="p-2 text-sm rounded-xl ${isZero?'btn cursor-not-allowed opacity-60':'btn-primary'}"
-              data-id="${p._rowId}" data-action="add">Agregar</button>
-          </div>
-        </div>`);
-    });
-
-    // Si a pesar de todo no pintó nada, muestro un placeholder
-    if (cont.children().length === 0) {
-      cont.html(`<div class="p-4 text-sm text-gray-500">No hay productos para mostrar.</div>`);
-    }
-  } catch (err){
-    console.error('renderProducts error:', err);
-    // Fallback ultra simple para no quedarnos sin UI
-    const list = Array.isArray(MENU) ? MENU : [];
-    $('#countProductos').text(list.length);
-    cont.append(list.map(p => `
-      <div class="p-2 flex items-center justify-between">
-        <div>${p.nombre ?? '(sin nombre)'}</div>
-        <button class="btn btn-primary text-sm" data-id="${p._rowId}" data-action="add">Agregar</button>
-      </div>
-    `).join(''));
+    if (!q) return true;
+    const haystack = [
+      p.nombre, p.categoria, p.subcategoria, p.sku, p.tipo, p.subtipo, p.descripcion
+    ].filter(Boolean).map(x => String(x).toLowerCase()).join(' ');
+    return haystack.includes(q);
   }
-}
 
+  function renderProducts(){
+    const cont = $('#listaProductos');
+    cont.empty();
+
+    try{
+      let list = Array.isArray(MENU) ? MENU.filter(productMatches) : [];
+      // Fallback si el filtro dio 0 pero hay menú
+      if (list.length === 0 && Array.isArray(MENU) && MENU.length > 0) {
+        console.warn('Filtro dio 0, uso todo el menú como fallback');
+        list = MENU.slice();
+      }
+
+      $('#countProductos').text(list.length);
+
+      if (list.length === 0){
+        cont.html(`<div class="p-4 text-sm text-gray-500">No hay productos para mostrar.</div>`);
+        return;
+      }
+
+      list.forEach(p=>{
+        const ctrl = controlsStock(p);
+        const dispStock = ctrl ? availableStock(p) : null;
+        const isLow  = ctrl && shouldLowStock(p);
+        const isZero = ctrl && shouldNoStock(p);
+
+        const rowClasses = `${isLow?'low-stock':''} ${isZero?'no-stock':''}`;
+        const stockHtml = ctrl
+          ? `<span class='text-xs ${isLow?'text-red-700':'text-gray-500'}'>Stock disp.: ${dispStock}${isLow?` · min ${productThreshold(p)}`:''}</span>`
+          : `<span class='text-xs text-gray-400'>Sin stock informado</span>`;
+
+        cont.append(`
+          <div class="p-3 flex items-center gap-3 hover:bg-gray-50 ${rowClasses}">
+            <div class="flex-1">
+              <div class="font-medium title">${p.nombre ?? '(sin nombre)'}</div>
+              <div class="text-xs text-gray-500">${(p.categoria||'')}${p.subcategoria?` · ${p.subcategoria}`:''}</div>
+              ${stockHtml}
+            </div>
+            <div class="text-right">
+              <div class="text-base font-semibold">${$fmt(p.precio)}</div>
+              ${p.costo?`<div class="text-[11px] text-gray-500">Costo ${$fmt(p.costo)}</div>`:''}
+              ${p.sku ? `<button class="btn btn-ghost text-[11px] mt-1" data-action="edit-stock" data-sku="${p.sku}">Editar stock</button>` : ''}
+            </div>
+            <div>
+              <button ${isZero?'disabled':''}
+                class="p-2 text-sm rounded-xl ${isZero?'btn cursor-not-allowed opacity-60':'btn-primary'}"
+                data-id="${p._rowId}" data-action="add">Agregar</button>
+            </div>
+          </div>`);
+      });
+    } catch (err){
+      console.error('renderProducts error:', err);
+      // Fallback para no quedarnos sin UI
+      const list = Array.isArray(MENU) ? MENU : [];
+      $('#countProductos').text(list.length);
+      cont.append(list.map(p => `
+        <div class="p-2 flex items-center justify-between">
+          <div>${p?.nombre ?? '(sin nombre)'}</div>
+          <button class="btn btn-primary text-sm" data-id="${p._rowId}" data-action="add">Agregar</button>
+        </div>
+      `).join(''));
+    }
+  }
 
   function renderMesas(){
     const cont = $('#listaMesas');
