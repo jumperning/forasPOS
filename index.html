@@ -194,7 +194,8 @@
 
   <script>
   // ---------- Estado & helpers ----------
-  let MENU = [];
+ let MENU = [];
+window.MENU = MENU;
   const ALERTED = new Set();
   let MESAS = [];
   let MESA_ACTUAL = null;
@@ -522,39 +523,39 @@
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || 'No pude cargar el menú');
 
-    window.MENU = (json.items || []).map((x, idx) => {
-      const sku = (x.sku ?? '').toString().trim();
-      const nombre = (x.nombre ?? '').toString().trim();
+   
+     const items = (json.items || []).map((x, idx) => {
+  const sku = (x.sku ?? '').toString().trim();
+  const nombre = (x.nombre ?? '').toString().trim();
+  const rawStock = x.stock;
+  const stock = (rawStock === '' || rawStock === null || rawStock === undefined) ? null : Number(rawStock);
+  return {
+    sku,
+    nombre,
+    categoria: x.categoria ?? '',
+    subcategoria: x.subcategoria ?? '',
+    precio: Number(x.precio ?? 0),
+    costo: Number(x.costo ?? 0),
+    stock,
+    _rowId: sku || nombre || `r${idx}`
+  };
+});
+MENU = items;
+window.MENU = items;
 
-      const rawStock = x.stock;
-      const stock = (rawStock === '' || rawStock === null || rawStock === undefined)
-        ? null
-        : Number(rawStock);
+// (opcional) reset filtros antes de pintar
+$('#categoria').val('');
+$('#subcategoria').val('');
+$('#buscar').val('');
 
-      return {
-        sku,
-        nombre,
-        categoria: x.categoria ?? '',
-        subcategoria: x.subcategoria ?? '',
-        precio: Number(x.precio ?? 0),
-        costo: Number(x.costo ?? 0),
-        stock,
-        _rowId: String(sku || nombre || `r${idx}`)
-      };
-    });
+// ahora sí, render
+renderFilters();
+renderProducts();
+renderMesas();
 
-    // Reset filtros antes de renderizar
-    $('#categoria').val('');
-    $('#subcategoria').val('');
-    $('#buscar').val('');
-
-    renderFilters();
-    renderProducts();
-    renderMesas();
-
-    const $badge = document.getElementById('statusBadge');
-    if ($badge) $badge.textContent = 'Menú sincronizado';
-    console.log('MENU cargado:', window.MENU.length, window.MENU.slice(0,3));
+const $badge = document.getElementById('statusBadge');
+if ($badge) $badge.textContent = 'Menú sincronizado';
+console.log('MENU cargado:', MENU.length, MENU.slice(0,3));
   }
 
   async function setStock(sku, newStock){
