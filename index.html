@@ -26,9 +26,6 @@
     .btn-ghost:hover{ background:#f9fafb }
     .inp{ border-radius:.75rem; border:1px solid #e5e7eb; padding:.5rem .75rem }
     .inp:focus{ outline:none; box-shadow:0 0 0 3px rgba(244,63,94,.15),0 0 0 1px var(--accent-500); border-color:var(--accent-500) }
-    .navlink{ display:flex; gap:.625rem; align-items:center; padding:.5rem .75rem; border-radius:.75rem; color:#334155 }
-    .navlink:hover{ background:#f3f4f6 }
-    .navlink.active{ background:var(--accent-50); color:var(--accent-600) }
     .badge{ display:inline-flex; align-items:center; gap:.375rem; padding:.25rem .5rem; border-radius:999px; font-size:.75rem; color:#000; background:#f3f4f6; }
     body { color:#000; }
     .text-slate-800,.text-slate-700,.text-slate-600,.text-slate-500,.text-slate-400,
@@ -209,7 +206,7 @@
     try{
       const raw = localStorage.getItem('pos-1112-mesas');
       if(raw){ const data = JSON.parse(raw); MESAS = data.mesas||[]; MESA_ACTUAL = data.actual||null; }
-    }catch{}
+    }catch(e){}
     if(MESAS.length===0){
       const id = uid();
       MESAS=[{id, nombre:'Mesa 1', color:'#fb8c00', items:[], cliente:'', pago:0}];
@@ -228,19 +225,11 @@
     return Number.isFinite(own) && own>0 ? own : glob;
   }
 
-  // ——— STOCK: helpers sólidos ———
-
-  // ¿Este producto controla stock?
+  // controla stock SOLO si stock es un número real
   function controlsStock(p){
-    return (
-      p != null &&
-      p.stock !== null &&
-      p.stock !== '' &&
-      Number.isFinite(Number(p.stock))
-    );
+    return p != null && p.stock !== null && p.stock !== '' && Number.isFinite(Number(p.stock));
   }
 
-  // Stock disponible (si no controla stock, no limitar)
   function availableStock(p){
     if (!controlsStock(p)) return Infinity;
     const stock = Number(p.stock);
@@ -248,7 +237,6 @@
     return Math.max(0, stock - reserved);
   }
 
-  // Bajo / Sin stock (solo si controla stock)
   function shouldLowStock(p){
     if (!controlsStock(p)) return false;
     const min = productThreshold(p);
@@ -258,7 +246,6 @@
     if (!controlsStock(p)) return false;
     return availableStock(p) <= 0 && Number(p.stock) > 0;
   }
-
   function maybeAlertLow(p){
     if(!shouldLowStock(p)) return;
     const key = p._rowId;
@@ -267,29 +254,8 @@
     alert(`⚠️ Stock bajo de "${p.nombre}". Quedan ${availableStock(p)} (umbral ${productThreshold(p)}).`);
   }
 
-  function parseMoney(v){
-    if(v==null) return 0;
-    if(typeof v === 'number' && isFinite(v)) return v;
-    let s = String(v).trim();
-    if(!s) return 0;
-    s = s.replace(/[^0-9,.\-]/g, '');
-    if(s.includes('.') && s.includes(',')){ s = s.replace(/\./g, '').replace(',', '.'); }
-    else{ s = s.replace(/,/g, ''); }
-    const n = Number(s); return isFinite(n) ? n : 0;
-  }
-  function parseIntegerLike(v){
-    if(v==null) return '';
-    if(typeof v === 'number' && isFinite(v)) return Math.round(v);
-    const s = String(v).trim().toLowerCase();
-    if(s==='' || s==='no' || s==='n/a' || s==='na' || s==='false') return '';
-    const clean = s.replace(/[^0-9\-]/g,'');
-    if(clean==='') return '';
-    const n = Number(clean);
-    return isFinite(n) ? Math.round(n) : '';
-  }
-
   // ---------- Render ----------
-  function groupUnique(arr, key){ return [...new Set(arr.map(x => (x[key]||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b)); }
+  function groupUnique(arr, key){ return [...new Set(arr.map(x => (x[key]||"").toString().trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b)); }
 
   function renderFilters(){
     const cats = groupUnique(MENU, 'categoria');
@@ -307,7 +273,6 @@
     subs.forEach(s => subSel.append(`<option value="${s}">${s}</option>`));
   }
 
-  // Filtro robusto (tolera undefined/null y múltiples campos)
   function productMatches(p){
     if (!p) return false;
     const q   = String($('#buscar').val() || '').trim().toLowerCase();
@@ -333,18 +298,11 @@
 
     try{
       let list = Array.isArray(MENU) ? MENU.filter(productMatches) : [];
-      // Fallback si el filtro dio 0 pero hay menú
       if (list.length === 0 && Array.isArray(MENU) && MENU.length > 0) {
-        console.warn('Filtro dio 0, uso todo el menú como fallback');
         list = MENU.slice();
       }
 
       $('#countProductos').text(list.length);
-
-      if (list.length === 0){
-        cont.html(`<div class="p-4 text-sm text-gray-500">No hay productos para mostrar.</div>`);
-        return;
-      }
 
       list.forEach(p=>{
         const ctrl = controlsStock(p);
@@ -376,15 +334,18 @@
             </div>
           </div>`);
       });
+
+      if (cont.children().length === 0) {
+        cont.html(`<div class="p-4 text-sm text-gray-500">No hay productos para mostrar.</div>`);
+      }
     } catch (err){
       console.error('renderProducts error:', err);
-      // Fallback para no quedarnos sin UI
       const list = Array.isArray(MENU) ? MENU : [];
       $('#countProductos').text(list.length);
       cont.append(list.map(p => `
         <div class="p-2 flex items-center justify-between">
-          <div>${p?.nombre ?? '(sin nombre)'}</div>
-          <button class="btn btn-primary text-sm" data-id="${p._rowId}" data-action="add">Agregar</button>
+          <div>${p.nombre ?? '(sin nombre)'}</div>
+          <button class="btn btn-primary text-sm" data-id="${String(p._rowId)}" data-action="add">Agregar</button>
         </div>
       `).join(''));
     }
@@ -421,18 +382,35 @@
 
   // ---------- Cart ----------
   function addToCart(rowId){
-   const m = mesaActual();
-   if (!m) return;
-   let p = MENU.find(x => x._rowId === rowId);
-   if (!p) {
-     // fallback por nombre, por si el id coincide con nombre
-     p = MENU.find(x => String(x.nombre || '').trim() === String(rowId || '').trim());
-   }
-   if (!p) {
-     console.warn('No encontré el producto para rowId:', rowId);
-     alert('No pude identificar el producto en el menú.');
-     return;
-   }
+    const m = mesaActual();
+    if (!m) return;
+    let p = MENU.find(x => x._rowId === rowId);
+    if (!p) {
+      p = MENU.find(x => String(x.nombre || '').trim() === String(rowId || '').trim());
+    }
+    if (!p) {
+      console.warn('No encontré el producto para rowId:', rowId);
+      alert('No pude identificar el producto en el menú.');
+      return;
+    }
+
+    if(controlsStock(p)){
+      const disp = availableStock(p);
+      if(disp<=0){ alert(`Sin stock de "${p.nombre}"`); renderProducts(); return; }
+    }
+    const ex=m.items.find(x=>x._rowId===rowId);
+    if(ex){
+      if(controlsStock(p)){
+        const disp = availableStock(p);
+        if(disp<=0){ alert(`Sin stock de "${p.nombre}"`); renderProducts(); return; }
+      }
+      ex.qty+=1;
+    }else{
+      m.items.push({_rowId:String(rowId),nombre:p.nombre,precio:Number(p.precio)||0,costo:Number(p.costo)||0,qty:1});
+    }
+    maybeAlertLow(p);
+    renderCart(); saveState(); renderProducts();
+  }
   function removeFromCart(rowId){
     const m=mesaActual(); if(!m) return;
     m.items = m.items.filter(x=>x._rowId!==rowId);
@@ -456,7 +434,7 @@
     renderCart(); saveState(); renderProducts();
   }
   function renderCart(){
-    const m=mesaActual(); const cont=$('#cartTable'); cont.empty(); if(!m){return}
+    const m=mesaActual(); const cont=$('#cartTable'); cont.empty(); if(!m){return;}
     const CART=m.items;
     if(CART.length===0){ cont.html('<p class="text-sm text-gray-500">No hay ítems en el carrito.</p>'); }
     else{
@@ -542,11 +520,10 @@
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || 'No pude cargar el menú');
 
-    MENU = (json.items || []).map((x, idx) => {
+    window.MENU = (json.items || []).map((x, idx) => {
       const sku = (x.sku ?? '').toString().trim();
       const nombre = (x.nombre ?? '').toString().trim();
 
-      // No convertir vacío en 0
       const rawStock = x.stock;
       const stock = (rawStock === '' || rawStock === null || rawStock === undefined)
         ? null
@@ -560,7 +537,7 @@
         precio: Number(x.precio ?? 0),
         costo: Number(x.costo ?? 0),
         stock,
-          _rowId: String(sku || nombre || `r${idx}`)  // <-- SIEMPRE string válido
+        _rowId: String(sku || nombre || `r${idx}`)
       };
     });
 
@@ -575,7 +552,7 @@
 
     const $badge = document.getElementById('statusBadge');
     if ($badge) $badge.textContent = 'Menú sincronizado';
-    console.log('MENU cargado:', MENU.length, MENU.slice(0,3));
+    console.log('MENU cargado:', window.MENU.length, window.MENU.slice(0,3));
   }
 
   async function setStock(sku, newStock){
@@ -623,16 +600,18 @@
     $('#stockMinGlobal').on('input', ()=> renderProducts());
     $('#categoria').on('change', function(){ renderSubcats(); renderProducts(); });
     $('#subcategoria, #buscar').on('input change', renderProducts);
+
+    // FIX robusto para "Agregar"
     $('#listaProductos').on('click','button[data-action="add"]', function(){
-   // tomar id de forma robusta (jQuery a veces cachea .data())
-   let id = $(this).attr('data-id') || $(this).data('id');
-   if (!id) {
-     console.warn('ADD sin data-id en el botón', this);
-     alert('No pude identificar el producto. Actualizá el menú e intentá de nuevo.');
-     return;
-   }
-   addToCart(String(id));
- });
+      let id = $(this).attr('data-id') || $(this).data('id');
+      if (!id) {
+        console.warn('ADD sin data-id en el botón', this);
+        alert('No pude identificar el producto. Actualizá el menú e intentá de nuevo.');
+        return;
+      }
+      addToCart(String(id));
+    });
+
     $('#listaProductos').on('click','[data-action="edit-stock"]', async function(){
       const sku = String($(this).data('sku') || '').trim();
       if (!sku) return;
