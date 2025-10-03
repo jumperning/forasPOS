@@ -506,7 +506,7 @@ window.MENU = MENU;
       if (data.ok !== true || data.marker !== 'SALE_RECEIVED') {
         throw new Error(data.error || 'Servidor no confirmó la venta');
       }
-      alert(`Pedido guardado ✅\nHoja: ${data.spreadsheetUrl}\nFila: ${data.ventasLastRow}`);
+      alert(`Pedido guardado ✅`);
       m.items=[]; renderCart(); saveState(); renderProducts();
       await loadMenuFromSheet(); // refrescar stocks desde Sheet
     }catch(err){
