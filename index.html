@@ -548,7 +548,7 @@
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || 'No pude cargar el menú');
 
-    window.MENU = (json.items || []).map((x, idx) => {
+    MENU = (json.items || []).map((x, idx) => {
       const sku = (x.sku ?? '').toString().trim();
       const nombre = (x.nombre ?? '').toString().trim();
 
@@ -581,7 +581,7 @@
 
     const $badge = document.getElementById('statusBadge');
     if ($badge) $badge.textContent = 'Menú sincronizado';
-    console.log('MENU cargado:', window.MENU.length, window.MENU.slice(0,3));
+    console.log('MENU cargado:', MENU.length, MENU.slice(0,3));
   }
 
   async function setStock(sku, newStock){
