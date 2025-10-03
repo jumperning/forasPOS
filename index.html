@@ -292,64 +292,66 @@
     return haystack.includes(q);
   }
 
-  function renderProducts(){
-    const cont = $('#listaProductos');
-    cont.empty();
+ function renderProducts(){
+  const cont = $('#listaProductos');
+  cont.empty();
 
-    try{
-      let list = Array.isArray(MENU) ? MENU.filter(productMatches) : [];
-      if (list.length === 0 && Array.isArray(MENU) && MENU.length > 0) {
-        list = MENU.slice();
-      }
+  try{
+    // 👉 ignoramos filtros por ahora: usamos TODO el menú
+    let list = Array.isArray(MENU) ? MENU.slice() : [];
+    console.log('[renderProducts] MENU len =', Array.isArray(MENU)?MENU.length:'(no array)');
 
-      $('#countProductos').text(list.length);
+    $('#countProductos').text(list.length);
 
-      list.forEach(p=>{
-        const ctrl = controlsStock(p);
-        const dispStock = ctrl ? availableStock(p) : null;
-        const isLow  = ctrl && shouldLowStock(p);
-        const isZero = ctrl && shouldNoStock(p);
+    list.forEach(p=>{
+      const ctrl = controlsStock(p);
+      const dispStock = ctrl ? availableStock(p) : null;
+      const isLow  = ctrl && shouldLowStock(p);
+      const isZero = ctrl && shouldNoStock(p);
 
-        const rowClasses = `${isLow?'low-stock':''} ${isZero?'no-stock':''}`;
-        const stockHtml = ctrl
-          ? `<span class='text-xs ${isLow?'text-red-700':'text-gray-500'}'>Stock disp.: ${dispStock}${isLow?` · min ${productThreshold(p)}`:''}</span>`
-          : `<span class='text-xs text-gray-400'>Sin stock informado</span>`;
+      const rowClasses = `${isLow?'low-stock':''} ${isZero?'no-stock':''}`;
+      const stockHtml = ctrl
+        ? `<span class='text-xs ${isLow?'text-red-700':'text-gray-500'}'>Stock disp.: ${dispStock}${isLow?` · min ${productThreshold(p)}`:''}</span>`
+        : `<span class='text-xs text-gray-400'>Sin stock informado</span>`;
 
-        cont.append(`
-          <div class="p-3 flex items-center gap-3 hover:bg-gray-50 ${rowClasses}">
-            <div class="flex-1">
-              <div class="font-medium title">${p.nombre ?? '(sin nombre)'}</div>
-              <div class="text-xs text-gray-500">${(p.categoria||'')}${p.subcategoria?` · ${p.subcategoria}`:''}</div>
-              ${stockHtml}
-            </div>
-            <div class="text-right">
-              <div class="text-base font-semibold">${$fmt(p.precio)}</div>
-              ${p.costo?`<div class="text-[11px] text-gray-500">Costo ${$fmt(p.costo)}</div>`:''}
-              ${p.sku ? `<button class="btn btn-ghost text-[11px] mt-1" data-action="edit-stock" data-sku="${p.sku}">Editar stock</button>` : ''}
-            </div>
-            <div>
-              <button ${isZero?'disabled':''}
-                class="p-2 text-sm rounded-xl ${isZero?'btn cursor-not-allowed opacity-60':'btn-primary'}"
-                data-id="${String(p._rowId)}" data-action="add">Agregar</button>
-            </div>
-          </div>`);
-      });
+      cont.append(`
+        <div class="p-3 flex items-center gap-3 hover:bg-gray-50 ${rowClasses}">
+          <div class="flex-1">
+            <div class="font-medium title">${p?.nombre ?? '(sin nombre)'}</div>
+            <div class="text-xs text-gray-500">${(p?.categoria||'')}${p?.subcategoria?` · ${p.subcategoria}`:''}</div>
+            ${stockHtml}
+          </div>
+          <div class="text-right">
+            <div class="text-base font-semibold">${$fmt(p?.precio)}</div>
+            ${p?.costo?`<div class="text-[11px] text-gray-500">Costo ${$fmt(p.costo)}</div>`:''}
+            ${p?.sku ? `<button class="btn btn-ghost text-[11px] mt-1" data-action="edit-stock" data-sku="${p.sku}">Editar stock</button>` : ''}
+          </div>
+          <div>
+            <button ${isZero?'disabled':''}
+              class="p-2 text-sm rounded-xl ${isZero?'btn cursor-not-allowed opacity-60':'btn-primary'}"
+              data-id="${String(p?._rowId ?? '')}" data-action="add">Agregar</button>
+          </div>
+        </div>`);
+    });
 
-      if (cont.children().length === 0) {
-        cont.html(`<div class="p-4 text-sm text-gray-500">No hay productos para mostrar.</div>`);
-      }
-    } catch (err){
-      console.error('renderProducts error:', err);
-      const list = Array.isArray(MENU) ? MENU : [];
-      $('#countProductos').text(list.length);
-      cont.append(list.map(p => `
-        <div class="p-2 flex items-center justify-between">
-          <div>${p.nombre ?? '(sin nombre)'}</div>
-          <button class="btn btn-primary text-sm" data-id="${String(p._rowId)}" data-action="add">Agregar</button>
-        </div>
-      `).join(''));
+    if (cont.children().length === 0) {
+      console.warn('[renderProducts] No se pintó nada. Ejemplo primer item:', list[0]);
+      cont.html(`<div class="p-4 text-sm text-gray-500">No hay productos para mostrar.</div>`);
+    } else {
+      console.log('[renderProducts] Pintados:', cont.children().length);
     }
+  } catch (err){
+    console.error('renderProducts error:', err);
+    const list = Array.isArray(MENU) ? MENU : [];
+    $('#countProductos').text(list.length);
+    cont.append(list.map(p => `
+      <div class="p-2 flex items-center justify-between">
+        <div>${p?.nombre ?? '(sin nombre)'}</div>
+        <button class="btn btn-primary text-sm" data-id="${String(p?._rowId ?? '')}" data-action="add">Agregar</button>
+      </div>
+    `).join(''));
   }
+}
 
   function renderMesas(){
     const cont = $('#listaMesas');
