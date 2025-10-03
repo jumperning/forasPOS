@@ -227,12 +227,16 @@
     const own = Number(p.min||p.minimo||p.alerta||0);
     return Number.isFinite(own) && own>0 ? own : glob;
   }
-  function availableStock(p){
-    const stock = Number(p.stock||0);
-    if(!Number.isFinite(stock)) return 0;
-    const reserved = reservedQtyAllMesas(p._rowId);
-    return Math.max(0, stock - reserved);
-  }
+function availableStock(p){
+  // Si el producto NO controla stock, no limitar
+  if (!controlsStock(p)) return Infinity;
+  const stock = Number(p.stock);
+  const reserved = reservedQtyAllMesas(p._rowId);
+  return Math.max(0, stock - reserved);
+}
+
+
+    
   function shouldLowStock(p){
     const min = productThreshold(p);
     return availableStock(p) <= min && (Number(p.stock||0) > 0);
@@ -289,18 +293,24 @@
     if(cat && p.categoria!==cat) return false; if(sub && p.subcategoria!==sub) return false; if(!q) return true;
     return [p.nombre,p.categoria,p.subcategoria,p.tipo,p.subtipo].join(' ').toLowerCase().includes(q);
   }
+    // Un producto controla stock SOLO si el stock es un número real (no null/undefined/"")
+function controlsStock(p){
+  return p != null && p.stock !== null && p.stock !== '' && controlsStock(p);
+}
   function renderProducts(){
     const cont=$('#listaProductos'); cont.empty();
     const list=MENU.filter(productMatches);
     $('#countProductos').text(list.length);
     list.forEach(p=>{
-      const dispStock = Number.isFinite(Number(p.stock)) ? availableStock(p) : null;
-      const isLow  = dispStock!==null && shouldLowStock(p);
-      const isZero = dispStock!==null && shouldNoStock(p);
+    const ctrl = controlsStock(p);
+const dispStock = ctrl ? availableStock(p) : null;
+const isLow  = ctrl && shouldLowStock(p);
+const isZero = ctrl && shouldNoStock(p);
       const rowClasses = `${isLow?'low-stock':''} ${isZero?'no-stock':''}`;
-      const stockHtml = (dispStock!==null)
-        ? `<span class='text-xs ${isLow?'text-red-700':'text-gray-500'}'>Stock disp.: ${dispStock}${isLow?` · min ${productThreshold(p)}`:''}</span>`
-        : `<span class='text-xs text-gray-400'>Sin stock informado</span>`;
+     const stockHtml = (ctrl)
+  ? `<span class='text-xs ${isLow?'text-red-700':'text-gray-500'}'>Stock disp.: ${dispStock}${isLow?` · min ${productThreshold(p)}`:''}</span>`
+  : `<span class='text-xs text-gray-400'>Sin stock informado</span>`;
+
       cont.append(`
         <div class="p-3 flex items-center gap-3 hover:bg-gray-50 ${rowClasses}">
           <div class="flex-1">
@@ -352,13 +362,13 @@
   // ---------- Cart ----------
   function addToCart(rowId){
     const m=mesaActual(); const p=MENU.find(x=>x._rowId===rowId); if(!m||!p) return;
-    if(Number.isFinite(Number(p.stock))){
+    if(controlsStock(p)){
       const disp = availableStock(p);
       if(disp<=0){ alert(`Sin stock de "${p.nombre}"`); renderProducts(); return; }
     }
     const ex=m.items.find(x=>x._rowId===rowId);
     if(ex){
-      if(Number.isFinite(Number(p.stock))){
+      if(controlsStock(p)){
         const disp = availableStock(p);
         if(disp<=0){ alert(`Sin stock de "${p.nombre}"`); renderProducts(); return; }
       }
@@ -514,6 +524,7 @@ async function loadMenuFromSheet(){
 
   const $badge = document.getElementById('statusBadge');
   if ($badge) $badge.textContent = 'Menú sincronizado';
+  console.log('MENU cargado:', window.MENU.length, window.MENU);
 }
 
 
