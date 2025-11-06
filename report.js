@@ -1,77 +1,73 @@
-// report.js — Lee un CSV publicado de Google Sheets y alimenta el Reporte
-// URL de ejemplo (la que me pasaste):
-// https://docs.google.com/spreadsheets/d/e/2PACX-1vQTQKDZJ8MOQM-D0qfgBlQqppWs3ilXNHG93CjC8Kjnp0h8Qwkomagzx0mu9bVx_lk5ZsfTBg0OtG8C/pub?output=csv
+// report_v2.js — Adaptador robusto para CSV publicado de Google Sheets (v2)
+// Detección flexible de encabezados, números con coma, BOM, acentos y columnas múltiples de ítems
+// URL ejemplo: https://docs.google.com/spreadsheets/d/e/2PACX-1vQTQKDZJ8MOQM-D0qfgBlQqppWs3ilXNHG93CjC8Kjnp0h8Qwkomagzx0mu9bVx_lk5ZsfTBg0OtG8C/pub?output=csv
 
-/*
-  === Qué hace este archivo ===
-  - Descarga el CSV publicado (con Papa.parse) desde el input #csvUrl
-  - Normaliza filas (fecha, total, costo, ganancia, items, cliente, mesa, método)
-  - Rellena filtros de mes / día y KPIs mensuales y diarios
-  - Pinta la tabla de ventas y hace paginación simple
-  - Deja hooks listos para los charts y el análisis por categoría (si hay data de categorías)
-
-  Está preparado para CSVs con encabezados en español/inglés y variantes como:
-  "fecha", "timestamp", "date";
-  "total", "monto", "ingreso";
-  "ganancia", "profit";
-  "costo", "cost";
-  "cliente", "nombre";
-  "mesa", "carrito";
-  "metodo", "método", "pago", "payment";
-  "items" (acepta JSON o texto tipo: "2x Hamburguesa | 1x Coca")
-*/
-
-// ---------- Estado global ----------
-let RAW_ROWS = [];   // filas crudas del CSV (objetos por encabezado)
-let SALES = [];      // filas normalizadas {fecha: Date, total: number, costo, ganancia, cliente, mesa, metodo, items: [{nombre, qty, categoria?}]}
-
-// UI / paginación
+let RAW_ROWS = [];
+let SALES = [];
 let PAGE = 1;
 const PAGE_SIZE = 25;
 
-// ---------- Utils ----------
 const $ = (sel, root=document) => root.querySelector(sel);
 const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
 const money = (n) => new Intl.NumberFormat('es-AR', {style:'currency', currency:'ARS', maximumFractionDigits:0}).format(Number(n||0));
-const int = (v) => Number.isFinite(Number(v)) ? Number(v) : 0;
 
+// ---- Normalización de encabezados ----
+function stripAccents(str){
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+function sanitizeKey(k){
+  if(k==null) return '';
+  let s = String(k).replace(/^\ufeff/, ''); // BOM
+  s = stripAccents(s).toLowerCase().trim();
+  s = s.replace(/\s+/g,' ');
+  s = s.replace(/[$%()\[\]#]/g,'');
+  s = s.replace(/[\s\/|-]+/g,'_');
+  return s;
+}
+
+// Sinonimias (claves ya saneadas)
 const headerMap = {
-  fecha: ['fecha','timestamp','date','fechahora','fecha_hora','created_at'],
-  total: ['total','monto','ingreso','importe','amount'],
-  ganancia: ['ganancia','profit','utilidad'],
-  costo: ['costo','cost'],
+  fecha: ['fecha','fecha_hora','fechahora','timestamp','date','created_at','creado','dia'],
+  total: ['total','importe','monto','ingreso','amount','total_$','total_ars'],
+  ganancia: ['ganancia','profit','utilidad','margen'],
+  costo: ['costo','cost','costo_total'],
   cliente: ['cliente','nombre','buyer','name'],
   mesa: ['mesa','carrito','table','cart'],
-  metodo: ['metodo','método','payment','pago','mp','medio'],
-  items: ['items','detalle','products','lineas','líneas']
+  metodo: ['metodo','metodo_de_pago','medio','payment','pago','mp'],
+  items: ['items','detalle','productos','lineas','lineas_items','lineas_producto']
 };
 
 function findCol(row, key){
   const opts = headerMap[key] || [];
-  // buscar primera coincidencia de clave existente (case-insensitive)
   for(const k of Object.keys(row)){
-    const norm = String(k).trim().toLowerCase();
+    const norm = sanitizeKey(k);
     if(opts.includes(norm)) return row[k];
   }
-  // fallback por coincidencia difusa
   for(const k of Object.keys(row)){
-    const norm = String(k).trim().toLowerCase();
+    const norm = sanitizeKey(k);
     if(opts.some(o => norm.includes(o))) return row[k];
   }
   return undefined;
 }
 
+// ---- Parseadores ----
+function parseNumberAny(v){
+  if(v==null || v==='') return 0;
+  if(typeof v === 'number') return v;
+  let s = String(v).trim();
+  s = s.replace(/[$\s\.]/g,'').replace(/,/g,'.');
+  const n = Number(s);
+  return Number.isFinite(n) ? n : 0;
+}
+
 function parseDateAny(v){
   if(!v) return null;
-  if(v instanceof Date) return v;
-  // soportar ISO, dd/mm/yyyy hh:mm, yyyy-mm-dd, etc.
+  if(v instanceof Date && !isNaN(v)) return v;
   let s = String(v).trim();
-  // Reemplazar 'T' y normalizar
   if(/\d{4}-\d{2}-\d{2}/.test(s)){
     const d = new Date(s);
     if(!isNaN(d)) return d;
   }
-  // dd/mm/yyyy [hh:mm]
   const m = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?/);
   if(m){
     const dd = parseInt(m[1],10), mm = parseInt(m[2],10)-1, yyyy = parseInt(m[3].length===2 ? ('20'+m[3]) : m[3], 10);
@@ -83,40 +79,54 @@ function parseDateAny(v){
   return isNaN(d2) ? null : d2;
 }
 
-function parseItemsField(v){
+function parseItemsField(v, row){
+  if(!v && row){
+    const entries = [];
+    const keys = Object.keys(row);
+    const itemCols = keys.filter(k => /item\d+|producto\d+|articulo\d+/i.test(sanitizeKey(k)));
+    if(itemCols.length){
+      itemCols.forEach(k =>{
+        const idx = sanitizeKey(k).match(/(\d+)/)?.[1];
+        const qtyKey = keys.find(z => new RegExp(`(cant|qty|cantidad)${idx}`, 'i').test(sanitizeKey(z)));
+        const nombre = String(row[k]||'').trim();
+        if(nombre){ entries.push({ nombre, qty: parseNumberAny(qtyKey?row[qtyKey]:1) || 1 }); }
+      });
+      return entries;
+    }
+  }
   if(!v) return [];
   if(Array.isArray(v)) return v;
-  // si viene JSON
-  if(typeof v === 'string' && v.trim().startsWith('[')){
+  const s = String(v).trim();
+  if(!s) return [];
+  if(s.startsWith('[')){
     try{
-      const arr = JSON.parse(v);
+      const arr = JSON.parse(s);
       return Array.isArray(arr) ? arr.map(x=>({
         nombre: String(x.nombre||x.item||x.producto||'').trim(),
-        qty: int(x.qty||x.cantidad||x.unidades||1),
+        qty: parseNumberAny(x.qty||x.cantidad||x.unidades||1),
         categoria: x.categoria || x.category
       })) : [];
     }catch{}
   }
-  // si viene texto tipo "2x Hamburguesa | 1x Coca"
-  const parts = String(v).split(/\|/);
-  return parts.map(p => {
-    const t = p.trim();
-    const m = t.match(/(\d+)\s*[x×]\s*(.*)/i);
-    if(m){ return { nombre: m[2].trim(), qty: int(m[1])||1 }; }
-    return { nombre: t, qty: 1 };
-  }).filter(x => x.nombre);
+  return s.split(/\|/).map(p=>{
+    const t=p.trim();
+    const m=t.match(/(\d+)\s*[x×]\s*(.*)/i);
+    if(m) return { nombre:m[2].trim(), qty: parseNumberAny(m[1])||1 };
+    return { nombre:t, qty:1 };
+  }).filter(x=>x.nombre);
 }
 
 function monthKey(d){ return d ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` : ''; }
 function ymd(d){ return d ? d.toISOString().slice(0,10) : ''; }
 
-// ---------- Carga CSV ----------
+// ---- Carga CSV ----
 async function loadCSV(url){
   return new Promise((resolve, reject)=>{
     Papa.parse(url, {
       download: true,
       header: true,
       skipEmptyLines: true,
+      transformHeader: (h) => sanitizeKey(h),
       complete: (res)=> resolve(res.data),
       error: (err)=> reject(err)
     });
@@ -125,23 +135,22 @@ async function loadCSV(url){
 
 function normalizeRows(rows){
   return rows.map((r)=>{
-    const fecha = parseDateAny(findCol(r,'fecha'));
-    const total = int(findCol(r,'total'));
-    const costo = int(findCol(r,'costo'));
+    const fecha = parseDateAny(findCol(r,'fecha') ?? r.fecha ?? r.fecha_hora ?? r.timestamp);
+    const total = parseNumberAny(findCol(r,'total'));
+    const costo = parseNumberAny(findCol(r,'costo'));
     let ganancia = findCol(r,'ganancia');
-    ganancia = ganancia==null || ganancia==='' ? (total - costo) : int(ganancia);
-    const cliente = String(findCol(r,'cliente')||'').trim();
-    const mesa = String(findCol(r,'mesa')||'').trim();
-    const metodo = String(findCol(r,'metodo')||'').trim();
-    const items = parseItemsField(findCol(r,'items'));
+    ganancia = ganancia==null || ganancia==='' ? (total - costo) : parseNumberAny(ganancia);
+    const cliente = String(findCol(r,'cliente') ?? r.cliente ?? '').trim();
+    const mesa = String(findCol(r,'mesa') ?? r.mesa ?? '').trim();
+    const metodo = String(findCol(r,'metodo') ?? r.metodo ?? '').trim();
+    const items = parseItemsField(findCol(r,'items'), r);
     return { fecha, total, costo, ganancia, cliente, mesa, metodo, items, _raw: r };
   }).filter(x => x.fecha instanceof Date && !isNaN(x.fecha));
 }
 
-// ---------- KPIs & Render ----------
+// ---- Filtros y KPIs ----
 function fillMonthSelect(){
-  const sel = $('#mesFiltro');
-  if(!sel) return;
+  const sel = $('#mesFiltro'); if(!sel) return;
   sel.innerHTML = '';
   const months = [...new Set(SALES.map(s=>monthKey(s.fecha)))].sort().reverse();
   months.forEach(mk => {
@@ -155,8 +164,8 @@ function fillMonthSelect(){
 
 function currentFilters(){
   const mk = $('#mesFiltro')?.value || monthKey(new Date());
-  const diaSel = $('#diaFiltro')?.value; // yyyy-mm-dd o ''
-  const hDesde = $('#horaDesde')?.value; // HH:MM
+  const diaSel = $('#diaFiltro')?.value;
+  const hDesde = $('#horaDesde')?.value;
   const hHasta = $('#horaHasta')?.value;
   const text = $('#buscar')?.value?.trim().toLowerCase() || '';
   const cat = $('#catFiltro')?.value || '';
@@ -171,7 +180,7 @@ function matchesText(row, text){
 }
 
 function withinHours(row, diaSel, hDesde, hHasta){
-  if(!diaSel) return true; // sin día => ignoro hora
+  if(!diaSel) return true;
   const ymdRow = ymd(row.fecha);
   if(ymdRow !== diaSel) return false;
   if(!hDesde && !hHasta) return true;
@@ -181,26 +190,18 @@ function withinHours(row, diaSel, hDesde, hHasta){
   return minutes >= from && minutes <= to;
 }
 
-function dataByMonth(mk){
-  return SALES.filter(r => monthKey(r.fecha) === mk);
-}
-
+function dataByMonth(mk){ return SALES.filter(r => monthKey(r.fecha) === mk); }
 function sum(arr, fn){ return arr.reduce((a,x)=> a + (fn(x)||0), 0); }
-
-function computeUnits(rows){
-  return sum(rows, r => r.items.reduce((a,i)=>a + int(i.qty), 0));
-}
+function computeUnits(rows){ return sum(rows, r => r.items.reduce((a,i)=>a + (Number(i.qty)||0), 0)); }
 
 function renderKPIs(){
   const { mk, diaSel, hDesde, hHasta, text } = currentFilters();
   const monthRows = dataByMonth(mk).filter(r => matchesText(r, text));
 
-  // Mensuales
   $('#kpiVentas').textContent   = monthRows.length.toString();
   $('#kpiUnidades').textContent = computeUnits(monthRows).toString();
   $('#kpiIngresos').textContent = money(sum(monthRows, r=>r.total));
 
-  // Día
   let dayRows = monthRows;
   if(diaSel){ dayRows = dayRows.filter(r => ymd(r.fecha) === diaSel); }
   dayRows = dayRows.filter(r => withinHours(r, diaSel, hDesde, hHasta));
@@ -216,15 +217,14 @@ function renderKPIs(){
   $('#kpiVentasDia').textContent= String(dayRows.length);
   $('#kpiCostoDia').textContent = money(cosDia);
 
-  // Rango cierre (usa el día si lo hay)
   $('#cierreIng').textContent      = money(ingDia);
   $('#cierreCosto').textContent    = money(cosDia);
   $('#cierreBruta').textContent    = money(ingDia - cosDia);
-  const gastos = int($('#cierreGastos')?.value || 0);
+  const gastos = Number($('#cierreGastos')?.value || 0);
   $('#cierreGastosLbl').textContent= money(gastos);
   const neta = (ingDia - cosDia) - gastos;
   $('#cierreNeta').textContent     = money(neta);
-  const personas = Math.max(1, int($('#cierrePersonas')?.value || 1));
+  const personas = Math.max(1, Number($('#cierrePersonas')?.value || 1));
   $('#cierrePorPersona').textContent = money(neta / personas);
 }
 
@@ -255,7 +255,6 @@ function renderTable(){
     tbody.appendChild(tr);
   });
 
-  // paginador
   const pager = $('#paginador');
   if(pager){
     pager.innerHTML = '';
@@ -272,12 +271,10 @@ function renderTable(){
   }
 }
 
-// ---------- Charts (opcionales, se renderizan si hay <canvas>) ----------
+// ---- Charts: ingresos por hora (si hay día seleccionado) ----
 let CHARTS = {};
 function destroyCharts(){ Object.values(CHARTS).forEach(c=>{ try{ c.destroy(); }catch{} }); CHARTS={}; }
-
 function maybeRenderCharts(){
-  // Por ahora armamos un gráfico simple de Ingresos por hora del día seleccionado
   const cvHoras = $('#chartHoras');
   const { mk, diaSel, hDesde, hHasta, text } = currentFilters();
   destroyCharts();
@@ -287,19 +284,26 @@ function maybeRenderCharts(){
     rows.forEach(r=>{ buckets[r.fecha.getHours()].total += r.total; });
     const labels = buckets.map(b=> String(b.h).padStart(2,'0')+':00');
     const data = buckets.map(b=> b.total);
-    CHARTS.horas = new Chart(cvHoras.getContext('2d'), {
-      type:'bar',
-      data:{ labels, datasets:[{ label:'Ingresos', data }] },
-      options:{ scales:{ y:{ beginAtZero:true } } }
-    });
-    const maxIdx = data.indexOf(Math.max(...data));
-    $('#lblPeakHour').textContent = maxIdx>=0 ? `Pico: ${labels[maxIdx]} (${money(data[maxIdx])})` : '';
+    if(typeof Chart !== 'undefined'){
+      CHARTS.horas = new Chart(cvHoras.getContext('2d'), {
+        type:'bar',
+        data:{ labels, datasets:[{ label:'Ingresos', data }] },
+        options:{ scales:{ y:{ beginAtZero:true } } }
+      });
+    }
+    $('#lblPeakHour').textContent = (Math.max(...data) > 0) ? `Pico: ${labels[data.indexOf(Math.max(...data))]} (${money(Math.max(...data))})` : '';
   }
-
-  // TODO: si en tus filas / items viene categoría, acá podemos armar pie/barras por categoría
 }
 
-// ---------- Bindings ----------
+// ---- Diagnóstico visible ----
+function showDiag(rows){
+  const d = $('#diag'); if(!d) return;
+  const first = rows[0] || {};
+  const keys = Object.keys(first);
+  d.textContent = `Encabezados detectados: ${keys.join(', ')} — Filas: ${rows.length}`;
+}
+
+// ---- Bindings ----
 function bindUI(){
   $('#btnReload')?.addEventListener('click', initLoad);
   $('#mesFiltro')?.addEventListener('change', ()=>{ PAGE=1; renderKPIs(); renderTable(); maybeRenderCharts(); });
@@ -316,7 +320,6 @@ function bindUI(){
   $('#cierreGastos')?.addEventListener('input', ()=>{ renderKPIs(); });
   $('#cierrePersonas')?.addEventListener('input', ()=>{ renderKPIs(); });
 
-  // Mostrar/ocultar montos (simple: agrega/remueve clase money con *** si se quiere)
   $('#btnToggleMoneda')?.addEventListener('click', ()=>{
     $$('.money').forEach(el=>{
       const curr = el.getAttribute('data-hidden') === '1';
@@ -325,13 +328,12 @@ function bindUI(){
     });
   });
 
-  // Panel de filtros (opcional)
   $('#btnConfigFiltros')?.addEventListener('click', ()=> $('#panelFiltros')?.classList.remove('hidden'));
   $('#btnFiltCancelar')?.addEventListener('click', ()=> $('#panelFiltros')?.classList.add('hidden'));
   $('#btnFiltGuardar')?.addEventListener('click', ()=> $('#panelFiltros')?.classList.add('hidden'));
 }
 
-// ---------- Init principal ----------
+// ---- Init ----
 async function initLoad(){
   const status = $('#statusBadge');
   const diag = $('#diag');
@@ -342,8 +344,14 @@ async function initLoad(){
     diag && (diag.textContent = 'Cargando datos desde: '+url);
     const rows = await loadCSV(url);
     RAW_ROWS = rows;
+    showDiag(rows);
+
     SALES = normalizeRows(rows).sort((a,b)=> a.fecha - b.fecha);
-    if(SALES.length===0) throw new Error('No se encontraron filas válidas. Verificá los encabezados.');
+    if(SALES.length===0){
+      const sample = rows[0] || {};
+      const keys = Object.keys(sample).join(', ');
+      throw new Error('No se encontraron filas válidas. Encabezados detectados: '+ keys + '. Verificá que exista una columna de FECHA y otra de TOTAL.');
+    }
 
     fillMonthSelect();
     renderKPIs();
@@ -359,9 +367,7 @@ async function initLoad(){
   }
 }
 
-// Auto-init al cargar la página
 window.addEventListener('DOMContentLoaded', ()=>{
-  // Si el input viene vacío, seteo la URL que me pasaste como predeterminada
   const csvInput = $('#csvUrl');
   if(csvInput && !csvInput.value){
     csvInput.value = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQTQKDZJ8MOQM-D0qfgBlQqppWs3ilXNHG93CjC8Kjnp0h8Qwkomagzx0mu9bVx_lk5ZsfTBg0OtG8C/pub?output=csv';
