@@ -17,7 +17,7 @@
     :root{
       --surface:#ffffff; --surface-weak:#f6f7f9;
       --accent-50:#fff1f2; --accent-100:#ffe4e6;
-      --accent-500:#f43f5e; --accent-600:#e11d48;
+      --accent-500:#f43f5e; --accent-600:#fb8c00;
     }
     html,body{height:100%}
     .container-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:1rem}
@@ -47,21 +47,39 @@
   /* Badges y textos “muted” también en negro */
   .badge { color:#000; }
 </style>
+
+  <script>
+    const STORE_NAME = "El Forastero";
+    const ORDERS_WEBAPP_URL = '/.netlify/functions/gs-order';
+    const API = '/.netlify/functions/gs-order';
+  </script>
 </head>
 <body class="bg-slate-50  text-black dark:text-black">
 
 
-  <!-- Sidebar -->
-  <aside class="hidden md:flex md:flex-col fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-200">
-    <div class="px-5 pt-6 pb-4 flex items-center gap-3">
-      <div class="h-9 w-9 grid place-items-center rounded-xl bg-[var(--accent-600)] text-white font-black">OD</div>
-      <div>
-        <div class="text-lg font-extrabold">OnceyDoce</div>
-        <div class="text-xs text-slate-500">POS & Reportes</div>
-      </div>
-    </div>
-    <nav class="mt-2 px-2 space-y-1">
-     <a href="./index.html" class="navlink ${location.pathname.endsWith('index.html') ? 'active' : ''}" title="POS">
+  <main class="md:ml-64 p-4 sm:p-6">
+    <div class="max-w-8xl mx-auto space-y-6">
+      <div class="grid grid-cols-12 gap-4 lg:gap-6">
+        <!-- Sidebar -->
+        <aside class="hidden md:block md:col-span-3 lg:col-span-2">
+          <div class="sticky top-4 space-y-4">
+            <!-- Logo / título -->
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-400 flex items-center justify-center shadow-sm">
+                <!-- Icono gráfico simple -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 7h16M4 12h16M4 17h10"/>
+                </svg>
+              </div>
+              <div>
+                <h1 class="text-lg font-bold leading-tight">POS El Forastero</h1>
+                <p class="text-xs text-gray-500">Reporte analítico de ventas</p>
+              </div>
+            </div>
+
+            <!-- Navegación simple -->
+<nav class="mt-2 px-2 space-y-1">
+     <a href="./index.html" class="navlink" title="POS">
     <!-- Cash/Ticket -->
     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <!-- base -->
@@ -76,300 +94,180 @@
   </a>
 
   <!-- Reporte -->
-  <a href="./reporte.html" class="navlink ${location.pathname.endsWith('reporte.html') ? 'active' : ''}" title="Reporte">
+  <a href="./reporte.html" class="navlink" title="Reporte">
     <!-- Chart bars -->
     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M3 20h18"/>
-      <rect x="5" y="11" width="3" height="6" rx="1"/>
-      <rect x="10.5" y="8" width="3" height="9" rx="1"/>
-      <rect x="16" y="5" width="3" height="12" rx="1"/>
+      <path d="M5 12v7M10 9v10M15 5v14M20 8v11"/>
     </svg>
     <span>Reporte</span>
   </a>
-    </nav>
-    <div class="mt-auto p-3">
-      <button id="btnLogout" class="btn w-full">Salir</button>
-      <div class="text-[10px] text-slate-400 mt-2 text-center">© 2025 OnceyDoce</div>
-    </div>
-  </aside>
+</nav>
 
-  <!-- Topbar (mobile) -->
-  <header class="md:ml-64 sticky top-0 z-40 bg-white/70 backdrop-blur border-b border-slate-200/60">
-    <div class="px-4 py-3 flex items-center justify-between md:justify-end">
-      <div class="md:hidden flex items-center gap-3">
-       <div class="h-9 w-9 grid place-items-center rounded-xl bg-[var(--accent-600)] text-white font-black">OD</div>
-        <span class="font-bold">OnceyDoce</span>
-      </div>
-      <div class="text-sm text-slate-500">Reporte</div>
-    </div>
-  </header>
-
-  <!-- Contenido -->
-  <main class="md:ml-64 p-4 sm:p-6">
-    <div class="max-w-7xl mx-auto space-y-6">
-
-      <!-- Header de la página -->
-      <header class="rounded-2xl bg-white shadow p-6 flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Reporte de Ventas</h1>
-          <p class="text-sm text-slate-500">Análisis y exportaciones</p>
-        </div>
-        <div class="flex items-center gap-3">
-          <!-- 👁️ mostrar/ocultar montos -->
-          <button id="btnToggleMoneda" class="px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50" title="Mostrar/ocultar montos">👁️</button>
-          <div id="statusBadge" class="text-xs px-3 py-1 rounded-full bg-gray-100">Sincronizando…</div>
-        </div>
-      </header>
-
-      <!-- Config -->
-      <section class="rounded-2xl bg-white shadow p-4">
-        <label class="block text-sm font-medium mb-1">URL CSV publicada (hoja POSOnceyDoce)</label>
-        <input id="csvUrl" type="text" class="w-full rounded-xl border-gray-300"
-  value="" />
-</div>
-        <button id="btnReload" class="mt-3 px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-sm">Recargar</button>
-      </section>
-
-      <!-- GRID principal (mismo esquema que index) -->
-      <div class="container-grid">
-        <!-- Filtros -->
-        <aside class="lg:col-span-3 col-span-12 bg-white rounded-2xl shadow p-4 space-y-4 h-fit lg:sticky lg:top-6">
-          <div class="flex items-center justify-between">
-            <h3 class="text-sm font-semibold">Filtros</h3>
-            <button id="btnConfigFiltros" class="btn text-xs">Personalizar filtros</button>
-          </div>
-
-          <div id="filtMes">
-            <label class="block text-sm font-medium mb-1">Mes</label>
-            <select id="mesFiltro" class="w-full rounded-xl border-gray-300"></select>
-          </div>
-
-          <div id="filtDia">
-            <label class="block text-sm font-medium mb-1">Día</label>
-            <input id="diaFiltro" type="date" class="w-full rounded-xl border-gray-300" />
-            <div class="flex gap-2 mt-2">
-              <button type="button" class="btn" id="btnHoy">Hoy</button>
-              <button type="button" class="btn" id="btnAyer">Ayer</button>
-              <button type="button" class="btn" id="btnMenos2">-2 días</button>
-            </div>
-            <p class="text-xs text-slate-500 mt-2">Afecta los KPIs diarios (Ganancia/Ingresos/Unidades/Ventas/Costo).</p>
-          </div>
-
-          <div id="filtHorario">
-            <label class="block text-sm font-medium mb-1">Filtrar por horario (del día seleccionado)</label>
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <span class="text-xs text-slate-600">Desde</span>
-                <input id="horaDesde" type="time" class="w-full rounded-xl border-gray-300" />
-              </div>
-              <div>
-                <span class="text-xs text-slate-600">Hasta</span>
-                <input id="horaHasta" type="time" class="w-full rounded-xl border-gray-300" />
+            <!-- Estado -->
+            <div class="mt-6">
+              <div class="badge">
+                <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span id="statusText">En línea</span>
               </div>
             </div>
-            <p class="text-xs text-slate-500 mt-2">Se aplica a KPIs del día y, si el alcance es “Día”, también al análisis.</p>
-          </div>
 
-          <div id="filtBuscar">
-            <label class="block text-sm font-medium mb-1">Buscar</label>
-            <input id="buscar" type="text" placeholder="producto, cliente…" class="w-full rounded-xl border-gray-300" />
-          </div>
-
-          <div id="filtCategoria">
-            <label class="block text-sm font-medium mb-1">Filtrar por Categoría</label>
-            <select id="catFiltro" class="w-full rounded-xl border-gray-300">
-              <option value="">Todas</option>
-              <option value="Café">Café</option>
-              <option value="Comida">Comida</option>
-              <option value="Cerveza">Cerveza</option>
-              <option value="Gaseosa">Gaseosa</option>
-              <option value="Agua">Agua</option>
-              <option value="Vino">Vino</option>
-              <option value="Whisky">Whisky</option>
-              <option value="Tragos">Tragos</option>
-            </select>
-            <p class="text-xs text-slate-500 mt-2">Por ejemplo: “Vino”, “Whisky” o “Tragos”.</p>
+            <!-- Tips / ayuda -->
+            <div class="mt-4 text-xs text-gray-500 space-y-1">
+              <p>1. En el campo URL CSV pegá la hoja <strong>VENTAS</strong> publicada del mismo spreadsheet que usa el POS.</p>
+              <p>2. Usá los filtros de fecha / categoría / método para explorar las ventas.</p>
+            </div>
           </div>
         </aside>
 
-        <!-- Contenido -->
-        <main class="lg:col-span-9 col-span-12 space-y-4">
-          <!-- KPIs -->
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <div class="bg-white rounded-2xl shadow p-4"><div class="text-xs text-slate-500">Ventas (mes)</div><div id="kpiVentas" class="text-2xl font-bold money">0</div></div>
-            <div class="bg-white rounded-2xl shadow p-4"><div class="text-xs text-slate-500">Unidades (mes)</div><div id="kpiUnidades" class="text-2xl font-bold money">0</div></div>
-            <div class="bg-white rounded-2xl shadow p-4"><div class="text-xs text-slate-500">Ingresos (mes)</div><div id="kpiIngresos" class="text-2xl font-bold money">$0</div></div>
-          </div>
-
-          <!-- KPIs del día -->
-          <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
-            <div class="bg-white rounded-2xl shadow p-4"><div class="text-xs text-slate-500">Ganancia (día)</div><div id="kpiGanDia" class="text-2xl font-bold money">$0</div><div id="kpiGanDiaLbl" class="text-xs text-slate-500 mt-1"></div></div>
-            <div class="bg-white rounded-2xl shadow p-4"><div class="text-xs text-slate-500">Ingresos (día)</div><div id="kpiIngDia" class="text-2xl font-bold money">$0</div></div>
-            <div class="bg-white rounded-2xl shadow p-4"><div class="text-xs text-slate-500">Unidades (día)</div><div id="kpiUniDia" class="text-2xl font-bold money">0</div></div>
-            <div class="bg-white rounded-2xl shadow p-4"><div class="text-xs text-slate-500">Ventas (día)</div><div id="kpiVentasDia" class="text-2xl font-bold money">0</div></div>
-            <div class="bg-white rounded-2xl shadow p-4"><div class="text-xs text-slate-500">Costo (día)</div><div id="kpiCostoDia" class="text-2xl font-bold money">$0</div></div>
-          </div>
-
-          <!-- Análisis por categoría -->
-          <div class="bg-white rounded-2xl shadow p-4 space-y-4">
-            <div class="flex flex-wrap items-center gap-3">
-              <h2 class="text-lg font-semibold mr-auto">Análisis por Categoría</h2>
-              <div class="flex gap-2">
-                <span class="chip cursor-default">Café</span>
-                <span class="chip cursor-default">Comida</span>
-                <span class="chip cursor-default">Cerveza</span>
-                <span class="chip cursor-default">Gaseosa</span>
-                <span class="chip cursor-default">Agua</span>
-                <span class="chip cursor-default">Vino</span>
-                <span class="chip cursor-default">Whisky</span>
-                <span class="chip cursor-default">Tragos</span>
-              </div>
+        <!-- Contenido principal -->
+        <section class="col-span-12 md:col-span-9 lg:col-span-10 space-y-4 lg:space-y-6">
+          <!-- Header -->
+          <header class="card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h2 class="text-xl sm:text-2xl font-bold tracking-tight">Reporte de Ventas</h2>
+              <p class="text-xs sm:text-sm text-gray-500">
+                Análisis diario, semanal y mensual de tus ventas registradas desde el POS.
+              </p>
             </div>
+            <div class="flex flex-wrap gap-2 items-center">
+              <button id="btnHoy" class="text-xs sm:text-sm px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200">Hoy</button>
+              <button id="btnSemana" class="text-xs sm:text-sm px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200">Semana</button>
+              <button id="btnMes" class="text-xs sm:text-sm px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200">Mes</button>
+            </div>
+          </header>
 
-            <div class="flex flex-wrap gap-3 items-end">
-              <div>
-                <label class="block text-xs text-slate-600 mb-1">Alcance</label>
-                <select id="alcanceSel" class="rounded-xl border-gray-300">
-                  <option value="mes">Mes completo (seleccionado)</option>
-                  <option value="dia">Día (usa el selector de la izquierda)</option>
-                  <option value="rango">Rango de fechas</option>
+          <!-- Filtros superiores -->
+          <div class="card p-4 sm:p-5">
+            <div class="grid grid-cols-12 gap-4">
+              <div class="col-span-12 md:col-span-4 space-y-2">
+                <label class="block text-xs font-medium text-gray-500">Rango de fechas</label>
+                <div class="flex gap-2">
+                  <input id="fDesde" type="date" class="inp w-1/2" />
+                  <input id="fHasta" type="date" class="inp w-1/2" />
+                </div>
+              </div>
+              <div class="col-span-12 md:col-span-3 space-y-2">
+                <label class="block text-xs font-medium text-gray-500">Método de pago</label>
+                <select id="selMetodo" class="inp w-full">
+                  <option value="">Todos</option>
+                  <option value="efectivo">Efectivo</option>
+                  <option value="mp">Mercado Pago</option>
+                  <option value="debito">Débito</option>
+                  <option value="credito">Crédito</option>
                 </select>
               </div>
-              <div id="rangoWrap" class="hidden flex items-end gap-2">
-                <div><label class="block text-xs text-slate-600 mb-1">Desde</label><input id="desdeFecha" type="date" class="rounded-xl border-gray-300"></div>
-                <div><label class="block text-xs text-slate-600 mb-1">Hasta</label><input id="hastaFecha" type="date" class="rounded-xl border-gray-300"></div>
-                <button id="btnAplicarRango" class="btn">Aplicar</button>
+              <div class="col-span-12 md:col-span-3 space-y-2">
+                <label class="block text-xs font-medium text-gray-500">Buscar cliente / mesa / item</label>
+                <input id="txtBuscar" type="text" class="inp w-full" placeholder="Ej: Lucas, Mesa 3, IPA..." />
               </div>
-              <label class="inline-flex items-center gap-2 ml-auto">
-                <input id="chkDiaDia" type="checkbox" class="rounded">
-                <span class="text-sm">Día a día (serie)</span>
-              </label>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="aggWrap">
-              <div class="rounded-xl border p-3"><div class="text-sm text-slate-500 mb-2">Participación por Unidades (%)</div><canvas id="chartPie"></canvas></div>
-              <div class="rounded-xl border p-3"><div class="text-sm text-slate-500 mb-2">Unidades por Categoría</div><canvas id="chartBarQty"></canvas></div>
-              <div class="rounded-xl border p-3"><div class="text-sm text-slate-500 mb-2">Ganancia por Categoría (ARS)</div><canvas id="chartBarProfit"></canvas></div>
-            </div>
-
-            <div id="dailyWrap" class="rounded-xl border p-3 hidden">
-              <div class="text-sm text-slate-500 mb-2">Unidades — Día a día (apilado por categoría)</div>
-              <canvas id="chartDailyQty"></canvas>
-            </div>
-
-            <div class="overflow-x-auto">
-              <table class="w-full text-sm mt-2">
-                <thead class="bg-gray-50 text-slate-600">
-                  <tr>
-                    <th class="text-left p-2">Categoría</th>
-                    <th class="text-right p-2">Unidades</th>
-                    <th class="text-right p-2">Veces</th>
-                    <th class="text-right p-2">Ganancia</th>
-                  </tr>
-                </thead>
-                <tbody id="tbodyResumenCat" class="divide-y"></tbody>
-              </table>
+              <div class="col-span-12 md:col-span-2 flex items-end">
+                <button id="btnResetFiltros" class="w-full text-xs sm:text-sm px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200">
+                  Limpiar filtros
+                </button>
+              </div>
             </div>
           </div>
 
-          <!-- Top & Explorador -->
-          <div class="bg-white rounded-2xl shadow p-4 space-y-4">
-            <div class="flex flex-wrap gap-3 items-end">
-              <h2 class="text-lg font-semibold mr-auto">Top & Explorador de Ítems</h2>
+          <!-- Bloque métricas + chart principales -->
+          <div class="grid grid-cols-12 gap-4 lg:gap-6">
+            <!-- Métricas -->
+            <div class="col-span-12 lg:col-span-4 space-y-4">
+              <div class="card p-4 space-y-3">
+                <div class="flex items-center justify-between gap-2">
+                  <h3 class="text-sm font-semibold">Resumen del período</h3>
+                  <span id="selResumen" class="text-xs px-2 py-1 rounded-full bg-gray-100">Personalizado</span>
+                </div>
+                <dl class="space-y-3">
+                  <div class="flex items-baseline justify-between">
+                    <dt class="text-xs text-gray-500">Ventas totales</dt>
+                    <dd id="mVentas" class="text-lg font-bold">—</dd>
+                  </div>
+                  <div class="flex items-baseline justify-between">
+                    <dt class="text-xs text-gray-500">Ganancia estimada</dt>
+                    <dd id="mGanancia" class="text-lg font-bold">—</dd>
+                  </div>
+                  <div class="flex items-baseline justify-between">
+                    <dt class="text-xs text-gray-500">Tickets</dt>
+                    <dd id="mTickets" class="text-lg font-bold">—</dd>
+                  </div>
+                  <div class="flex items-baseline justify-between">
+                    <dt class="text-xs text-gray-500">Ticket promedio</dt>
+                    <dd id="mTicketProm" class="text-lg font-bold">—</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <!-- Top categorías -->
+              <div class="card p-4">
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="text-sm font-semibold">Top categorías</h3>
+                  <button id="btnVerCategorias" class="text-xs text-gray-500 hover:underline">Ver detalle</button>
+                </div>
+                <div id="listaTopCategorias" class="space-y-2 text-xs">
+                  <!-- se completa por JS -->
+                </div>
+              </div>
+
+              <!-- Top items -->
+              <div class="card p-4">
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="text-sm font-semibold">Top productos</h3>
+                  <button id="btnVerItems" class="text-xs text-gray-500 hover:underline">Ver detalle</button>
+                </div>
+                <div id="listaTopItems" class="space-y-2 text-xs">
+                  <!-- se completa por JS -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="col-span-12 lg:col-span-8 space-y-4">
+              <div class="card p-4">
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="text-sm font-semibold">Ventas por día</h3>
+                  <p class="text-xs text-gray-500">Monto total diario (histograma)</p>
+                </div>
+                <div class="h-60">
+                  <canvas id="chartVentasDia"></canvas>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-12 gap-4">
+                <div class="col-span-12 md:col-span-6">
+                  <div class="card p-4">
+                    <div class="flex items-center justify-between mb-2">
+                      <h3 class="text-sm font-semibold">Métodos de pago</h3>
+                      <p class="text-xs text-gray-500">Participación por monto</p>
+                    </div>
+                    <div class="h-52">
+                      <canvas id="chartMetodos"></canvas>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-span-12 md:col-span-6">
+                  <div class="card p-4">
+                    <div class="flex items-center justify-between mb-2">
+                      <h3 class="text-sm font-semibold">Categorías</h3>
+                      <p class="text-xs text-gray-500">Top categorías por ventas</p>
+                    </div>
+                    <div class="h-52">
+                      <canvas id="chartCategorias"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Tabla de ventas -->
+          <div class="card p-4 sm:p-5 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <label class="block text-xs text-slate-600 mb-1">Categoría (opcional)</label>
-                <select id="itemCatSel" class="rounded-xl border-gray-300">
-                  <option value="">Todas</option>
-                  <option>Café</option><option>Comida</option><option>Cerveza</option>
-                  <option>Gaseosa</option><option>Agua</option><option>Vino</option>
-                  <option>Whisky</option><option>Tragos</option>
-                </select>
+                <h3 class="text-sm font-semibold">Detalle de ventas</h3>
+                <p class="text-xs text-gray-500">Todas las ventas filtradas en el período.</p>
               </div>
-              <div>
-                <label class="block text-xs text-slate-600 mb-1">Filtrar por texto</label>
-                <input id="itemTextSel" type="text" placeholder="ej: hamburguesa, empanada, ipa…" class="rounded-xl border-gray-300"/>
-              </div>
-              <div>
-                <label class="block text-xs text-slate-600 mb-1">Ordenar por</label>
-                <select id="itemSortSel" class="rounded-xl border-gray-300">
-                  <option value="qty">Unidades</option>
-                  <option value="ingreso">Ingresos</option>
-                  <option value="veces">Veces</option>
-                  <option value="ganancia">Ganancia</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-xs text-slate-600 mb-1">Top N</label>
-                <input id="itemTopN" type="number" min="3" value="10" class="w-20 rounded-xl border-gray-300"/>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div class="rounded-xl border p-3">
-                <div class="text-sm text-slate-500 mb-2">Top por Unidades (según alcance)</div>
-                <canvas id="chartTopItems"></canvas>
-              </div>
-              <div class="overflow-x-auto rounded-xl border">
-                <table class="w-full text-sm">
-                  <thead class="bg-gray-50 text-slate-600">
-                    <tr>
-                      <th class="text-left p-2">Ítem</th>
-                      <th class="text-right p-2">Unid.</th>
-                      <th class="text-right p-2">Veces</th>
-                      <th class="text-right p-2">Ingreso</th>
-                      <th class="text-right p-2">Ganancia</th>
-                      <th class="text-left p-2">Categoría</th>
-                    </tr>
-                  </thead>
-                  <tbody id="tbodyItems" class="divide-y"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <!-- Horarios -->
-          <div class="bg-white rounded-2xl shadow p-4 space-y-2">
-            <div class="flex items-center justify-between">
-              <h2 class="text-lg font-semibold">Horarios con más ventas</h2>
-              <div class="text-xs text-slate-500" id="lblPeakHour"></div>
-            </div>
-            <div class="rounded-xl border p-3">
-              <div class="text-sm text-slate-500 mb-2">Ingresos por hora (según alcance)</div>
-              <canvas id="chartHoras"></canvas>
-            </div>
-          </div>
-
-          <!-- Cierre y reparto -->
-          <div class="border-t pt-4">
-            <h3 class="text-sm font-semibold mb-2">Cierre y reparto</h3>
-            <div class="grid grid-cols-2 gap-2">
-              <div><label class="block text-xs text-slate-600 mb-1">Personas</label><input id="cierrePersonas" type="number" min="1" value="4" class="w-full rounded-xl border-gray-300" /></div>
-              <div><label class="block text-xs text-slate-600 mb-1">Gastos del día (ARS)</label><input id="cierreGastos" type="number" step="1" value="0" class="w-full rounded-xl border-gray-300" /></div>
-            </div>
-            <p class="text-xs text-slate-500 mt-2">Usa el día y horario seleccionados arriba.</p>
-          </div>
-
-          <div class="bg-white rounded-2xl shadow p-4">
-            <div class="flex items-center justify-between mb-3">
-              <h2 class="text-lg font-semibold">Cierre y reparto</h2>
-              <span class="text-xs text-slate-500" id="cierreRangoLbl"></span>
-            </div>
-
-            <div class="grid grid-cols-2 sm:grid-cols-6 gap-4">
-              <div class="rounded-xl border p-3"><div class="text-xs text-slate-500">Ingresos (día)</div><div id="cierreIng" class="text-xl font-bold money">$0</div></div>
-              <div class="rounded-xl border p-3"><div class="text-xs text-slate-500">Costo (día)</div><div id="cierreCosto" class="text-xl font-bold money">$0</div></div>
-              <div class="rounded-xl border p-3"><div class="text-xs text-slate-500">Ganancia bruta</div><div id="cierreBruta" class="text-xl font-bold money">$0</div></div>
-              <div class="rounded-xl border p-3"><div class="text-xs text-slate-500">Gastos del local</div><div id="cierreGastosLbl" class="text-xl font-bold money">$0</div></div>
-              <div class="rounded-xl border p-3"><div class="text-xs text-slate-500">Ganancia neta</div><div id="cierreNeta" class="text-xl font-bold money">$0</div></div>
-              <div class="rounded-xl border p-3"><div class="text-xs text-slate-500">Por persona</div><div id="cierrePorPersona" class="text-xl font-bold money">$0</div></div>
-            </div>
-          </div>
-
-          <!-- Tabla -->
-          <div class="bg-white rounded-2xl shadow p-4">
-            <div class="flex items-center justify-between mb-3">
-              <h2 class="text-lg font-semibold">Ventas</h2>
-              <div class="flex gap-2">
+              <div class="flex flex-wrap gap-2 items-center">
                 <button id="btnExcel" class="text-sm px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200">Descargar Excel</button>
                 <button id="btnExcelFact" class="text-sm px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200">Exportar Facturación</button>
                 <button id="btnExpandir" class="text-sm px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200">Expandir items</button>
@@ -388,25 +286,84 @@
                     <th class="text-right p-2">Ganancia</th>
                   </tr>
                 </thead>
-                <tbody id="tbodyVentas" class="divide-y"></tbody>
+                <tbody id="tblVentasBody" class="divide-y divide-gray-100">
+                  <!-- filas dinámicas -->
+                </tbody>
               </table>
             </div>
-            <div id="paginador" class="flex flex-wrap items-center gap-2 justify-between mt-3 text-sm"></div>
+
+            <!-- Paginación -->
+            <div class="flex items-center justify-between mt-3 text-xs text-gray-500">
+              <div>
+                <span id="lblPagina">Página 1</span>
+                <span id="lblRango" class="ml-2 text-gray-400">Mostrando 0–0 de 0</span>
+              </div>
+              <div class="flex gap-1">
+                <button id="btnPrev" class="px-2 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-40">Anterior</button>
+                <button id="btnNext" class="px-2 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-40">Siguiente</button>
+              </div>
+            </div>
           </div>
-        </main>
+
+          <!-- Diagnóstico / consola -->
+          <div class="card p-4 space-y-2 text-xs text-gray-600">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-semibold">Diagnóstico</h3>
+              <button id="btnDiagToggle" class="px-2 py-1 rounded-lg bg-gray-100 hover:bg-gray-200">Ver / ocultar</button>
+            </div>
+            <pre id="diag" class="max-h-40 overflow-y-auto bg-gray-50 rounded-lg p-2 text-[11px]"></pre>
+          </div>
+
+          <!-- Configuración CSV -->
+          <div class="card p-4 space-y-3">
+            <h3 class="text-sm font-semibold">Origen de datos</h3>
+            <p class="text-xs text-gray-500">
+              Pegá acá la URL de la hoja <strong>VENTAS</strong> publicada como CSV desde Google Sheets.
+            </p>
+            <div class="grid grid-cols-12 gap-2 items-end">
+              <div class="col-span-12 md:col-span-9">
+                <div class="rounded-2xl bg-white shadow p-4">
+        <label class="block text-sm font-medium mb-1">URL CSV publicada (hoja POSOnceyDoce)</label>
+        <input id="csvUrl" type="text" class="w-full rounded-xl border-gray-300"
+  value="" />
+</div>
+              </div>
+              <div class="col-span-12 md:col-span-3 flex gap-2">
+                <button id="btnReload" class="flex-1 px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-sm">Recargar</button>
+              </div>
+            </div>
+          </div>
+
+        </section>
       </div>
     </div>
   </main>
 
-  <!-- Panel flotante para elegir qué filtros se ven -->
-  <div id="panelFiltros" class="hidden fixed inset-0 z-50 flex items-center justify-center">
-    <div class="absolute inset-0 bg-black/30"></div>
-    <div class="relative bg-white rounded-2xl shadow-xl p-4 w-[min(92vw,420px)]">
-      <h4 class="font-semibold mb-3">Mostrar filtros</h4>
-      <div class="space-y-2 text-sm">
-        <label class="flex items-center gap-2"><input type="checkbox" class="chkFilt" value="filtMes"> Mes</label>
-        <label class="flex items-center gap-2"><input type="checkbox" class="chkFilt" value="filtDia"> Día</label>
-        <label class="flex items-center gap-2"><input type="checkbox" class="chkFilt" value="filtHorario"> Horario</label>
+  <!-- Modal genérico para listas -->
+  <div id="modalLista" class="fixed inset-0 z-40 hidden items-center justify-center bg-black/30">
+    <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[80vh] flex flex-col">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <h3 id="modalListaTitulo" class="text-sm font-semibold">Detalle</h3>
+        <button id="btnModalCerrar" class="text-gray-400 hover:text-gray-600">&times;</button>
+      </div>
+      <div id="modalListaBody" class="p-4 overflow-y-auto text-sm">
+        <!-- contenido dinámico -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal filtros avanzados -->
+  <div id="modalFiltros" class="fixed inset-0 z-40 hidden items-center justify-center bg-black/30">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <h3 class="text-sm font-semibold">Filtros avanzados</h3>
+        <button id="btnFiltCerrar" class="text-gray-400 hover:text-gray-600">&times;</button>
+      </div>
+      <div class="p-4 space-y-3 text-sm">
+        <p class="text-xs text-gray-500">Acá podrías agregar filtros extra (por horario, por mozo, por nota, etc.).</p>
+        <label class="flex items-center gap-2"><input type="checkbox" class="chkFilt" value="filtMañana"> Turno mañana</label>
+        <label class="flex items-center gap-2"><input type="checkbox" class="chkFilt" value="filtTarde"> Turno tarde</label>
+        <label class="flex items-center gap-2"><input type="checkbox" class="chkFilt" value="filtNoche"> Turno noche</label>
         <label class="flex items-center gap-2"><input type="checkbox" class="chkFilt" value="filtBuscar"> Buscar</label>
         <label class="flex items-center gap-2"><input type="checkbox" class="chkFilt" value="filtCategoria"> Categoría</label>
       </div>
@@ -417,7 +374,16 @@
     </div>
   </div>
 
-  <!-- Tu lógica -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const current = location.pathname.split('/').pop() || 'index.html';
+      document.querySelectorAll('.navlink').forEach(a => {
+        const href = a.getAttribute('href') || '';
+        if (href.endsWith(current)) a.classList.add('active');
+      });
+    });
+  </script>
+
   <script src="report.js"></script>
 </body>
 </html>
